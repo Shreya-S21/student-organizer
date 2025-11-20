@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Student Organizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100vh;
+            background: #2c3e50;
+            color: white;
+            transition: left 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            padding: 15px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background-color: #34495e;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 0;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.shifted {
+            margin-left: 250px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 20px;
+            padding: 5px;
+        }
+
+        /* Profile Container */
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Profile Header */
+        .profile-header {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3498db, #8e44ad);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .profile-email {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .profile-joined {
+            color: #95a5a6;
+            font-size: 0.9rem;
+        }
+
+        /* Profile Sections */
+        .profile-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .profile-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .profile-section h3 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .form-footer {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #2ecc71;
+            color: white;
+            border-radius: 5px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content.shifted {
+                margin-left: 0;
+            }
+
+            .profile-sections {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Success states */
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>📚 Student Hub</h2>
+        </div>
+        
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html">🏠 Dashboard</a></li>
+                <li><a href="profile.html" class="active">👤 Profile</a></li>
+                <li><a href="goals.html">🎯 Goals</a></li>
+                <li><a href="calendar.html">📅 Calendar</a></li>
+                <li><a href="history.html">📜 History</a></li>
+                <li><a href="analysis.html">📊 Analysis</a></li>
+                <li><a href="ai-tracking.html">🤖 AI Tracking</a></li>
+            </ul>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <!-- Header -->
+        <div class="header">
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+            <h1>My Profile</h1>
+        </div>
+
+        <!-- Profile Container -->
+        <div class="profile-container">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">S</div>
+                <h2 class="profile-name" id="profile-name">Student</h2>
+                <p class="profile-email" id="profile-email">student@example.com</p>
+                <p class="profile-joined">Member since: <span id="member-since">January 2024</span></p>
+            </div>
+
+            <!-- Profile Sections -->
+            <div class="profile-sections">
+                <!-- Personal Information -->
+                <div class="profile-section">
+                    <h3>Personal Information</h3>
+                    <form id="personal-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="first-name">First Name</label>
+                                <input type="text" id="first-name" name="firstName" placeholder="Enter your first name">
+                            </div>
+                            <div class="form-group">
+                                <label for="last-name">Last Name</label>
+                                <input type="text" id="last-name" name="lastName" placeholder="Enter your last name">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" placeholder="Enter your email">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="university">University/School</label>
+                            <input type="text" id="university" name="university" placeholder="Enter your institution">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="course">Course/Grade</label>
+                                <input type="text" id="course" name="course" placeholder="e.g., Computer Science">
+                            </div>
+                            <div class="form-group">
+                                <label for="year">Year Level</label>
+                                <select id="year" name="year">
+                                    <option value="Freshman">Freshman</option>
+                                    <option value="Sophomore">Sophomore</option>
+                                    <option value="Junior">Junior</option>
+                                    <option value="Senior">Senior</option>
+                                    <option value="Graduate">Graduate</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-footer">
+                            <button type="submit" class="btn btn-success">Save Personal Info</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Study Preferences -->
+                <div class="profile-section">
+                    <h3>Study Preferences</h3>
+                    <form id="preferences-form">
+                        <div class="form-group">
+                            <label for="study-time">Preferred Study Time</label>
+                            <select id="study-time" name="studyTime">
+                                <option value="Early Morning (5-8 AM)">Early Morning (5-8 AM)</option>
+                                <option value="Morning (8-12 PM)">Morning (8-12 PM)</option>
+                                <option value="Afternoon (12-5 PM)">Afternoon (12-5 PM)</option>
+                                <option value="Evening (5-9 PM)">Evening (5-9 PM)</option>
+                                <option value="Night (9 PM-12 AM)">Night (9 PM-12 AM)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="study-goal">Daily Study Goal (hours)</label>
+                                <input type="number" id="study-goal" name="studyGoal" min="1" max="12" placeholder="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="sleep-goal">Sleep Goal (hours)</label>
+                                <input type="number" id="sleep-goal" name="sleepGoal" min="4" max="12" placeholder="8">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="break-frequency">Break Frequency</label>
+                            <select id="break-frequency" name="breakFrequency">
+                                <option value="Every 25 minutes">Every 25 minutes (Pomodoro)</option>
+                                <option value="Every 50 minutes">Every 50 minutes</option>
+                                <option value="Every hour">Every hour</option>
+                                <option value="As needed">As needed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="study-environment">Preferred Study Environment</label>
+                            <select id="study-environment" name="studyEnvironment">
+                                <option value="Quiet Library">Quiet Library</option>
+                                <option value="Home Room">Home Room</option>
+                                <option value="Coffee Shop">Coffee Shop</option>
+                                <option value="Group Study Room">Group Study Room</option>
+                                <option value="Outdoors">Outdoors</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-footer">
+                            <button type="submit" class="btn">Save Preferences</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = {};
+        let isLoading = false;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadProfileData();
+            setupEventListeners();
+        });
+
+        // Toggle sidebar menu
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const content = document.getElementById('main-content');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            content.classList.toggle('shifted');
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Load user data from localStorage
+        function loadUserData() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+        }
+
+        // Load profile data
+        function loadProfileData() {
+            // Load saved profile data
+            const profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+            const preferences = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+            
+            // Load personal information
+            document.getElementById('first-name').value = profile.firstName || '';
+            document.getElementById('last-name').value = profile.lastName || '';
+            document.getElementById('email').value = profile.email || currentUser.email || '';
+            document.getElementById('phone').value = profile.phone || '';
+            document.getElementById('university').value = profile.university || '';
+            document.getElementById('course').value = profile.course || '';
+            document.getElementById('year').value = profile.year || 'Freshman';
+            
+            // Load study preferences
+            document.getElementById('study-time').value = preferences.studyTime || 'Morning (8-12 PM)';
+            document.getElementById('study-goal').value = preferences.studyGoal || '6';
+            document.getElementById('sleep-goal').value = preferences.sleepGoal || '8';
+            document.getElementById('break-frequency').value = preferences.breakFrequency || 'Every 50 minutes';
+            document.getElementById('study-environment').value = preferences.studyEnvironment || 'Quiet Library';
+            
+            // Update display elements
+            updateDisplayInfo(profile);
+        }
+
+        // Update display information
+        function updateDisplayInfo(profile) {
+            const firstName = profile.firstName || currentUser.name || 'Student';
+            const lastName = profile.lastName || '';
+            
+            // Update header elements
+            document.getElementById('profile-name').textContent = `${firstName} ${lastName}`.trim();
+            document.getElementById('profile-email').textContent = profile.email || currentUser.email || 'student@example.com';
+            document.getElementById('profile-avatar').textContent = (firstName.charAt(0) || 'S').toUpperCase();
+            
+            // Update member since date
+            const memberSince = localStorage.getItem('memberSince') || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('member-since').textContent = memberSince;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Personal information form
+            const personalForm = document.getElementById('personal-form');
+            if (personalForm) {
+                personalForm.addEventListener('submit', handlePersonalFormSubmit);
+            }
+            
+            // Preferences form
+            const preferencesForm = document.getElementById('preferences-form');
+            if (preferencesForm) {
+                preferencesForm.addEventListener('submit', handlePreferencesFormSubmit);
+            }
+            
+            // Form input real-time updates
+            setupRealTimeUpdates();
+            
+            // Overlay click to close sidebar
+            document.getElementById('overlay').addEventListener('click', toggleMenu);
+        }
+
+        // Handle personal information form submission
+        function handlePersonalFormSubmit(e) {
+            e.preventDefault();
+            
+            if (isLoading) return;
+            
+            isLoading = true;
+            showLoadingState('personal-form');
+            
+            // Collect form data
+            const profile = {
+                firstName: document.getElementById('first-name').value.trim(),
+                lastName: document.getElementById('last-name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                university: document.getElementById('university').value.trim(),
+                course: document.getElementById('course').value.trim(),
+                year: document.getElementById('year').value
+            };
+            
+            // Basic validation
+            if (!profile.firstName || !profile.email) {
+                showNotification('First name and email are required', 'error');
+                hideLoadingState('personal-form');
+                isLoading = false;
+                return;
+            }
+            
+            // Simulate save delay
+            setTimeout(() => {
+                try {
+                    // Save to localStorage
+                    localStorage.setItem('userProfile', JSON.stringify(profile));
+                    
+                    // Update currentUser if needed
+                    if (currentUser.name === 'Student' || !currentUser.name) {
+                        currentUser.name = profile.firstName;
+                        currentUser.email = profile.email;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    
+                    // Update display
+                    updateDisplayInfo(profile);
+                    
+                    // Show success message
+                    showSuccessMessage('personal-form', 'Personal information saved successfully!');
+                    showNotification('Profile updated successfully!', 'success');
+                    
+                } catch (error) {
+                    showNotification('Error saving profile. Please try again.', 'error');
+                } finally {
+                    hideLoadingState('personal-form');
+                    isLoading = false;
+                }
+            }, 800);
+        }
+
+        // Handle preferences form submission
+        function handlePreferencesFormSubmit(e) {
+            e.preventDefault();
+            
+            if (isLoading) return;
+            
+            isLoading = true;
+            showLoadingState('preferences-form');
+            
+            // Collect form data
+            const preferences = {
+                studyTime: document.getElementById('study-time').value,
+                studyGoal: document.getElementById('study-goal').value,
+                sleepGoal: document.getElementById('sleep-goal').value,
+                breakFrequency: document.getElementById('break-frequency').value,
+                studyEnvironment: document.getElementById('study-environment').value
+            };
+            
+            // Validate numeric inputs
+            if (preferences.studyGoal < 1 || preferences.studyGoal > 12) {
+                showNotification('Study goal must be between 1 and 12 hours', 'error');
+                hideLoadingState('preferences-form');
+                isLoading = false;
+                return;
+            }
+            
+            if (preferences.sleepGoal < 4 || preferences.sleepGoal > 12) {
+                showNotification('Sleep goal must be between 4 and 12 hours', 'error');
+                hideLoadingState('preferences-form');
+                isLoading = false;
+                return;
+            }
+            
+            // Simulate save delay
+            setTimeout(() => {
+                try {
+                    // Save preferences
+                    localStorage.setItem('userPreferences', JSON.stringify(preferences));
+                    
+                    // Also save individual goals for dashboard integration
+                    localStorage.setItem('study-goal', preferences.studyGoal);
+                    localStorage.setItem('sleep-goal', preferences.sleepGoal);
+                    
+                    // Show success message
+                    showSuccessMessage('preferences-form', 'Preferences saved successfully!');
+                    showNotification('Preferences updated successfully!', 'success');
+                    
+                } catch (error) {
+                    showNotification('Error saving preferences. Please try again.', 'error');
+                } finally {
+                    hideLoadingState('preferences-form');
+                    isLoading = false;
+                }
+            }, 800);
+        }
+
+        // Setup real-time updates for form inputs
+        function setupRealTimeUpdates() {
+            // Auto-save on blur for personal info
+            const personalInputs = ['first-name', 'last-name', 'email', 'phone', 'university', 'course'];
+            personalInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('blur', function() {
+                        if (this.value.trim()) {
+                            // Show preview of name change
+                            const profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+                            profile[this.name] = this.value.trim();
+                            updateDisplayInfo(profile);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Show loading state
+        function showLoadingState(formId) {
+            const form = document.getElementById(formId);
+            if (form) {
+                form.classList.add('loading');
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.textContent = 'Saving...';
+                    button.disabled = true;
+                }
+            }
+        }
+
+        // Hide loading state
+        function hideLoadingState(formId) {
+            const form = document.getElementById(formId);
+            if (form) {
+                form.classList.remove('loading');
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.textContent = button.textContent.includes('Personal') ? 'Save Personal Info' : 'Save Preferences';
+                    button.disabled = false;
+                }
+            }
+        }
+
+        // Show success message
+        function showSuccessMessage(formId, message) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            
+            // Remove existing success message
+            const existingMessage = form.querySelector('.success-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Add new success message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            form.insertBefore(successDiv, form.firstChild);
+            
+            // Remove success message after 3 seconds
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            // Style based on type
+            if (type === 'error') {
+                notification.style.background = '#e74c3c';
+            } else if (type === 'success') {
+                notification.style.background = '#2ecc71';
+            } else {
+                notification.style.background = '#3498db';
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape key closes sidebar
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar.classList.contains('active')) {
+                    toggleMenu();
+                }
+            }
+            
+            // Ctrl+S saves current form
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                const activeForm = document.activeElement.closest('form');
+                if (activeForm) {
+                    activeForm.dispatchEvent(new Event('submit'));
+                }
+            }
+        });
+    </script>
+</body>
+</html>

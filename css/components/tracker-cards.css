@@ -1,0 +1,148 @@
+/* css/components/tracker-cards.css */
+/* Tracker Cards Component */
+
+.trackers-section {
+    margin-top: var(--spacing-xl);
+}
+
+.trackers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.trackers-title {
+    font-size: 1.25rem;
+    color: var(--color-dark);
+}
+
+.trackers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.tracker-card {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.tracker-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--gradient-primary);
+    transform: scaleY(0);
+    transition: transform var(--transition-base);
+}
+
+.tracker-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.tracker-card:hover::before {
+    transform: scaleY(1);
+}
+
+.tracker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+}
+
+.tracker-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--color-gray-light);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.tracker-card.sleep .tracker-icon { background: rgba(130, 87, 229, 0.1); }
+.tracker-card.study .tracker-icon { background: rgba(251, 99, 64, 0.1); }
+.tracker-card.screen .tracker-icon { background: rgba(45, 206, 137, 0.1); }
+.tracker-card.exercise .tracker-icon { background: rgba(245, 87, 108, 0.1); }
+.tracker-card.break .tracker-icon { background: rgba(54, 215, 183, 0.1); }
+.tracker-card.class .tracker-icon { background: rgba(94, 114, 228, 0.1); }
+
+.tracker-title {
+    font-size: 1rem;
+    color: var(--color-gray-dark);
+    font-weight: 600;
+}
+
+.tracker-input-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.tracker-input {
+    flex: 1;
+    padding: var(--spacing-md);
+    background: var(--color-gray-light);
+    border-radius: var(--radius-md);
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-align: center;
+    transition: all var(--transition-base);
+}
+
+.tracker-input:focus {
+    background: var(--color-white);
+    box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.tracker-input-label {
+    color: var(--color-gray);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.tracker-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: var(--spacing-md);
+    background: var(--color-gray-light);
+    border-radius: var(--radius-md);
+    resize: vertical;
+    font-family: inherit;
+    transition: all var(--transition-base);
+}
+
+.tracker-textarea:focus {
+    background: var(--color-white);
+    box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.tracker-progress {
+    margin-top: var(--spacing-md);
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--color-gray-light);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}

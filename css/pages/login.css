@@ -1,0 +1,130 @@
+/* css/pages/login.css */
+/* Login Page Specific Styles */
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+}
+
+.login-container {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    margin: auto;
+    padding: var(--spacing-xl);
+}
+
+.login-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--spacing-2xl);
+    color: var(--color-white);
+}
+
+.login-logo {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-xl);
+}
+
+.login-tagline {
+    font-size: 1.25rem;
+    line-height: 1.8;
+    opacity: 0.95;
+}
+
+.login-features {
+    margin-top: var(--spacing-2xl);
+}
+
+.login-feature {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.feature-icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-form-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 450px;
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    box-shadow: var(--shadow-xl);
+}
+
+.login-form-header {
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+}
+
+.login-form-title {
+    font-size: 1.75rem;
+    color: var(--color-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.login-form-subtitle {
+    color: var(--color-gray);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-gray-dark);
+    font-weight: 500;
+}
+
+.form-input {
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-gray-light);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+}
+
+.form-input:focus {
+    background: var(--color-white);
+    box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-footer {
+    text-align: center;
+    margin-top: var(--spacing-xl);
+}
+
+.form-link {
+    color: var(--color-primary);
+    font-weight: 500;
+}

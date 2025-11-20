@@ -1,0 +1,58 @@
+/* css/main.css */
+/* Main CSS file that imports all components */
+
+/* Base styles */
+@import url('base/reset.css');
+@import url('base/variables.css');
+@import url('base/typography.css');
+
+/* Components */
+@import url('components/sidebar.css');
+@import url('components/header.css');
+@import url('components/banner.css');
+@import url('components/tracker-cards.css');
+@import url('components/buttons.css');
+
+/* Page-specific styles */
+@import url('pages/login.css');
+@import url('pages/dashboard.css');
+
+/* Utility Classes */
+.container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+
+.hidden { display: none !important; }
+.visible { display: block !important; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-content.shifted {
+        margin-left: 0;
+    }
+    
+    .login-container {
+        flex-direction: column;
+    }
+    
+    .trackers-grid {
+        grid-template-columns: 1fr;
+    }
+}

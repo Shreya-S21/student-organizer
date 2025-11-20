@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structura - Student Task Organizer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-info">
+            <h1 class="login-logo">Structura</h1>
+            <p class="login-tagline">
+                Transform your academic journey with intelligent task management 
+                and wellness tracking. Build better habits, achieve your goals, 
+                and maintain the perfect work-life balance.
+            </p>
+            <div class="login-features">
+                <div class="login-feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Track study hours and productivity</span>
+                </div>
+                <div class="login-feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Monitor sleep and wellness</span>
+                </div>
+                <div class="login-feature">
+                    <div class="feature-icon">✓</div>
+                    <span>AI-powered insights and recommendations</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="login-form-container">
+            <div class="login-form-wrapper">
+                <div class="login-form-header">
+                    <h2 class="login-form-title">Welcome Back</h2>
+                    <p class="login-form-subtitle">Sign in to continue to your dashboard</p>
+                </div>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username" class="form-label">Username or Email</label>
+                        <input type="text" id="username" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" id="password" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    
+                    <div class="form-footer">
+                        <p>Don't have an account? <a href="#" class="form-link">Sign up here</a></p>
+                        <p class="mt-sm"><a href="#" class="form-link">Forgot password?</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Remove the type="module" -->
+    <script src="js/script.js"></script>
+</body>
+</html>

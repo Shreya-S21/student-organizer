@@ -3,69 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structura - Student Task Organizer</title>
-    <link rel="stylesheet" href="css/main.css">
-</head>
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-info">
-            <h1 class="login-logo">Structura</h1>
-            <p class="login-tagline">
-                Transform your academic journey with intelligent task management 
-                and wellness tracking. Build better habits, achieve your goals, 
-                and maintain the perfect work-life balance.
-            </p>
-            <div class="login-features">
-                <div class="login-feature">
-                    <div class="feature-icon">✓</div>
-                    <span>Track study hours and productivity</span>
-                </div>
-                <div class="login-feature">
-                    <div class="feature-icon">✓</div>
-                    <span>Monitor sleep and wellness</span>
-                </div>
-                <div class="login-feature">
-                    <div class="feature-icon">✓</div>
-                    <span>AI-powered insights and recommendations</span>
-                </div>
-            </div>
-        </div>
+    <title>Sign In - Student Organizer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
         
-        <div class="login-form-container">
-            <div class="login-form-wrapper">
-                <div class="login-form-header">
-                    <h2 class="login-form-title">Welcome Back</h2>
-                    <p class="login-form-subtitle">Sign in to continue to your dashboard</p>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 50%, #f0f2f5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #02092c 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .login-body {
+            padding: 40px 30px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #a0aec0;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .remember-me label {
+            font-size: 0.9rem;
+            color: #4a5568;
+            cursor: pointer;
+        }
+
+        .signin-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+
+        .signin-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .signin-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .signup-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #feb2b2;
+            display: none;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #9ae6b4;
+            display: none;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .login-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .login-header {
+                padding: 30px 20px;
+            }
+
+            .login-body {
+                padding: 30px 20px;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+
+            .signin-btn {
+                padding: 14px;
+            }
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo"> Student Organizer</div>
+            <p class="tagline">Your personal space for academic growth</p>
+        </div>
+
+        <div class="login-body">
+            <form id="login-form">
+                <div class="error-message" id="error-message" role="alert">
+                    Please fill in all fields correctly.
                 </div>
                 
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="username" class="form-label">Username or Email</label>
-                        <input type="text" id="username" class="form-input" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" id="password" class="form-input" required>
-                    </div>
-                    
-                    <div class="form-checkbox">
-                        <input type="checkbox" id="remember">
-                        <label for="remember">Remember me</label>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-                    
-                    <div class="form-footer">
-                        <p>Don't have an account? <a href="#" class="form-link">Sign up here</a></p>
-                        <p class="mt-sm"><a href="#" class="form-link">Forgot password?</a></p>
-                    </div>
-                </form>
-            </div>
+                <div class="form-group">
+                    <label for="username">Username or Email</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter your username or email">
+                </div>
+
+                <div class="form-group password-container">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
+                        👁️
+                    </button>
+                </div>
+
+                <div class="remember-me">
+                    <input type="checkbox" id="remember-me" name="remember">
+                    <label for="remember-me">Remember me</label>
+                </div>
+
+                <button type="submit" class="signin-btn" id="signin-btn">
+                    <span class="loading-spinner" id="loading-spinner" style="display: none;"></span>
+                    Sign In
+                </button>
+
+                <div class="signup-link">
+                    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign up here</a></p>
+                </div>
+            </form>
         </div>
     </div>
-    
-    <!-- Remove the type="module" -->
-    <script src="js/script.js"></script>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.querySelector('.password-toggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.innerHTML = '🙈';
+                toggleBtn.setAttribute('aria-label', 'Hide password');
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.innerHTML = '👁️';
+                toggleBtn.setAttribute('aria-label', 'Show password');
+            }
+        }
+
+        // Show signup modal (demo - you can expand this)
+        function showSignup() {
+            const email = document.getElementById('username').value;
+            if (email) {
+                const response = confirm(`Create account for ${email}? This is a demo - any password works!`);
+                if (response) {
+                    // Simulate signup
+                    setTimeout(() => {
+                        alert('Account created! Welcome to Student Organizer.');
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                }
+            } else {
+                alert('Please enter an email to sign up.');
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('remember-me').checked;
+            const btn = document.getElementById('signin-btn');
+            const spinner = document.getElementById('loading-spinner');
+            const errorDiv = document.getElementById('error-message');
+            
+            // Reset previous states
+            errorDiv.style.display = 'none';
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btn.innerHTML = '<span class="loading-spinner"></span>Signing In...';
+            
+            // Validation
+            if (!username || !password) {
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btn.innerHTML = 'Sign In';
+                return;
+            }
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                try {
+                    // For demo, any username/password works
+                    const userData = {
+                        name: username.split('@')[0], // Use username without domain
+                        email: username.includes('@') ? username : `${username}@example.com`,
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    // Save if remember me is checked
+                    if (rememberMe) {
+                        localStorage.setItem('rememberedUser', JSON.stringify(userData));
+                    }
+                    
+                    // Redirect to dashboard
+                    window.location.href = 'dashboard.html';
+                } catch (error) {
+                    errorDiv.style.display = 'block';
+                    btn.disabled = false;
+                    spinner.style.display = 'none';
+                    btn.innerHTML = 'Sign In';
+                }
+            }, 1500);
+        });
+
+        // Load remembered user if available
+        document.addEventListener('DOMContentLoaded', function() {
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (rememberedUser) {
+                const userData = JSON.parse(rememberedUser);
+                document.getElementById('username').value = userData.email;
+                document.getElementById('remember-me').checked = true;
+            }
+        });
+    </script>
+
 </body>
+<link rel="stylesheet" href="y2k-style.css">
 </html>

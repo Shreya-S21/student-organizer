@@ -271,6 +271,11 @@
             background: #2980b9;
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-success {
             background: #2ecc71;
         }
@@ -753,20 +758,61 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
-        // Global variables
-        let currentUser = {};
+        // =============================================
+        // FIREBASE CONFIGURATION
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
+            authDomain: "student-organizer-53420.firebaseapp.com",
+            projectId: "student-organizer-53420",
+            storageBucket: "student-organizer-53420.firebasestorage.app",
+            messagingSenderId: "481845921136",
+            appId: "1:481845921136:web:10ce801027f42b2311bbb5",
+            measurementId: "G-7365W6G880"
+        };
+
+        // Initialize Firebase
+        let auth, db;
+        let currentUser = null;
         let isLoading = false;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            console.log('✅ Firebase initialized successfully');
+        } catch (error) {
+            console.error('❌ Firebase init error:', error);
+        }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserData();
-            loadTodayData();
-            updateGreeting();
-            updateCurrentDate();
-            setupEventListeners();
-            updateAllStats();
-            startRealTimeUpdates();
+            console.log('=== DASHBOARD LOADING ===');
+            // Check authentication first
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log('✅ User logged in:', user.email);
+                    loadUserData();
+                    loadTodayData();
+                    updateGreeting();
+                    updateCurrentDate();
+                    setupEventListeners();
+                    updateAllStats();
+                    startRealTimeUpdates();
+                    setupFirebaseListeners();
+                } else {
+                    console.log('❌ No user logged in, redirecting...');
+                    // Not logged in, redirect to login
+                    window.location.href = 'index.html';
+                }
+            });
         });
 
         // Toggle sidebar menu
@@ -781,61 +827,93 @@
         }
 
         // Logout function
-        function logout() {
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.clear();
-                window.location.href = 'index.html';
+                try {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('Error logging out. Please try again.');
+                }
             }
         }
 
-        // Load user data
-        function loadUserData() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-            }
-        }
-
-        // Load today's data
-        function loadTodayData() {
-            const today = new Date().toISOString().split('T')[0];
+        // Load user data from Firestore
+        async function loadUserData() {
+            if (!currentUser) return;
             
-            // Load tracker inputs
-            document.querySelectorAll('.tracker-input').forEach(input => {
-                const type = input.dataset.type;
-                const savedValue = localStorage.getItem(`tracker_${today}_${type}`);
-                if (savedValue) {
-                    input.value = savedValue;
-                    updateProgress(type, savedValue);
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    // Update greeting with user's name
+                    updateGreeting(userData.name || currentUser.displayName);
                 }
-            });
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
 
-            // Load class schedule
-            const scheduleTextarea = document.querySelector('[data-type="schedule"]');
-            if (scheduleTextarea) {
-                const savedSchedule = localStorage.getItem(`tracker_${today}_schedule`);
-                if (savedSchedule) {
-                    scheduleTextarea.value = savedSchedule;
+        // Load today's data from Firestore
+        async function loadTodayData() {
+            if (!currentUser) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            console.log('Loading data for:', today);
+            
+            try {
+                const docRef = db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').doc(today);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    console.log('Loaded today\'s data:', data);
+                    
+                    // Load tracker inputs
+                    document.querySelectorAll('.tracker-input').forEach(input => {
+                        const type = input.dataset.type;
+                        if (data.trackers && data.trackers[type]) {
+                            input.value = data.trackers[type];
+                            updateProgress(type, data.trackers[type]);
+                        }
+                    });
+
+                    // Load class schedule
+                    const scheduleTextarea = document.querySelector('[data-type="schedule"]');
+                    if (scheduleTextarea && data.trackers && data.trackers.schedule) {
+                        scheduleTextarea.value = data.trackers.schedule;
+                    }
+                } else {
+                    console.log('No data found for today');
                 }
+            } catch (error) {
+                console.error('Error loading today\'s data:', error);
             }
         }
 
         // Setup event listeners
         function setupEventListeners() {
-            // Auto-save on input
+            // Auto-save on input with debouncing
+            let saveTimeout;
+            
             document.querySelectorAll('.tracker-input').forEach(input => {
                 input.addEventListener('input', function() {
                     const type = this.dataset.type;
-                    const today = new Date().toISOString().split('T')[0];
+                    const value = this.value;
                     
-                    // Save to localStorage
-                    localStorage.setItem(`tracker_${today}_${type}`, this.value);
+                    // Update progress bar immediately
+                    updateProgress(type, value);
                     
-                    // Update progress bar
-                    updateProgress(type, this.value);
-                    
-                    // Update stats
+                    // Update stats immediately
                     updateAllStats();
+                    
+                    // Debounce Firebase save
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => {
+                        saveTrackerData(type, value);
+                    }, 1000); // Save after 1 second of no input
                 });
 
                 // Add focus effects
@@ -852,13 +930,70 @@
             const scheduleTextarea = document.querySelector('[data-type="schedule"]');
             if (scheduleTextarea) {
                 scheduleTextarea.addEventListener('input', function() {
-                    const today = new Date().toISOString().split('T')[0];
-                    localStorage.setItem(`tracker_${today}_schedule`, this.value);
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => {
+                        saveTrackerData('schedule', this.value);
+                    }, 1000);
                 });
             }
 
             // Close sidebar when clicking overlay
             document.getElementById('overlay').addEventListener('click', toggleMenu);
+        }
+
+        // Save tracker data to Firebase
+        async function saveTrackerData(type, value) {
+            if (!currentUser) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            try {
+                const docRef = db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').doc(today);
+                
+                await docRef.set({
+                    [`trackers.${type}`]: value,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                console.log(`✅ Auto-saved ${type}: ${value}`);
+            } catch (error) {
+                console.error('❌ Error saving tracker data:', error);
+                showNotification('Error saving data. Please check your connection.', 'error');
+            }
+        }
+
+        // Setup real-time Firebase listeners
+        function setupFirebaseListeners() {
+            if (!currentUser) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const docRef = db.collection('users').doc(currentUser.uid)
+                .collection('dailyData').doc(today);
+            
+            // Listen for real-time updates
+            docRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.trackers) {
+                        // Update UI with latest data
+                        Object.keys(data.trackers).forEach(type => {
+                            const input = document.querySelector(`[data-type="${type}"]`);
+                            if (input && input !== document.activeElement) {
+                                input.value = data.trackers[type];
+                                if (type !== 'schedule') {
+                                    updateProgress(type, data.trackers[type]);
+                                }
+                            }
+                        });
+                        
+                        // Update stats
+                        updateAllStats();
+                    }
+                }
+            }, (error) => {
+                console.error('Error listening to updates:', error);
+            });
         }
 
         // Update progress bar
@@ -870,18 +1005,13 @@
             let percentage = 0;
             let target = 8; // Default target
 
-            // Get user preferences for targets
-            const preferences = JSON.parse(localStorage.getItem('userPreferences') || '{}');
-            const studyGoal = parseFloat(preferences.studyGoal || '6');
-            const sleepGoal = parseFloat(preferences.sleepGoal || '8');
-
             switch(type) {
                 case 'sleep':
-                    target = sleepGoal;
+                    target = 8;
                     percentage = (numValue / target) * 100;
                     break;
                 case 'study':
-                    target = studyGoal;
+                    target = 6;
                     percentage = (numValue / target) * 100;
                     break;
                 case 'screen':
@@ -912,7 +1042,7 @@
         }
 
         // Update greeting based on time
-        function updateGreeting() {
+        function updateGreeting(userName) {
             const hour = new Date().getHours();
             let greeting = 'Good Evening';
             
@@ -924,7 +1054,7 @@
             
             const greetingElement = document.getElementById('greeting');
             if (greetingElement) {
-                const name = currentUser.name || 'Student';
+                const name = userName || currentUser?.displayName || 'Student';
                 greetingElement.textContent = `${greeting}, ${name}! 👋`;
             }
         }
@@ -945,9 +1075,8 @@
         }
 
         // Update all statistics
-        function updateAllStats() {
-            const today = new Date().toISOString().split('T')[0];
-            const stats = calculateStatistics();
+        async function updateAllStats() {
+            const stats = await calculateStatistics();
             
             // Update banner stats
             document.getElementById('today-tasks').textContent = stats.todayTasks;
@@ -961,76 +1090,112 @@
             document.getElementById('goals-achieved').textContent = stats.goalsAchieved;
         }
 
-        // Calculate statistics from stored data
-        function calculateStatistics() {
+        // Calculate statistics from Firebase data
+        async function calculateStatistics() {
+            if (!currentUser) {
+                return {
+                    todayTasks: 0,
+                    productivity: 0,
+                    studyTime: '0.0',
+                    weeklyProgress: 0,
+                    completedTasks: 0,
+                    avgSleep: '0.0',
+                    goalsAchieved: 0
+                };
+            }
+            
             let totalStudy = 0;
             let totalSleep = 0;
             let sleepDays = 0;
             let studyDays = 0;
             let productivityScores = [];
             
-            // Analyze last 7 days
-            for (let i = 0; i < 7; i++) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                const studyData = localStorage.getItem(`tracker_${dateStr}_study`);
-                const sleepData = localStorage.getItem(`tracker_${dateStr}_sleep`);
-                
-                if (studyData) {
-                    const studyHours = parseFloat(studyData);
-                    totalStudy += studyHours;
-                    studyDays++;
+            try {
+                // Analyze last 7 days
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
                     
-                    // Calculate productivity (study vs goal)
-                    const preferences = JSON.parse(localStorage.getItem('userPreferences') || '{}');
-                    const goal = parseFloat(preferences.studyGoal || '6');
-                    const dailyScore = Math.min(100, (studyHours / goal) * 100);
-                    productivityScores.push(dailyScore);
+                    const docRef = db.collection('users').doc(currentUser.uid)
+                        .collection('dailyData').doc(dateStr);
+                    const doc = await docRef.get();
+                    
+                    if (doc.exists) {
+                        const data = doc.data();
+                        
+                        if (data.trackers) {
+                            if (data.trackers.study) {
+                                const studyHours = parseFloat(data.trackers.study);
+                                totalStudy += studyHours;
+                                studyDays++;
+                                
+                                // Calculate productivity (study vs goal)
+                                const goal = 6;
+                                const dailyScore = Math.min(100, (studyHours / goal) * 100);
+                                productivityScores.push(dailyScore);
+                            }
+                            
+                            if (data.trackers.sleep) {
+                                const sleepHours = parseFloat(data.trackers.sleep);
+                                totalSleep += sleepHours;
+                                sleepDays++;
+                            }
+                        }
+                    }
                 }
                 
-                if (sleepData) {
-                    const sleepHours = parseFloat(sleepData);
-                    totalSleep += sleepHours;
-                    sleepDays++;
-                }
+                // Calculate averages
+                const avgStudy = studyDays > 0 ? totalStudy / studyDays : 0;
+                const avgSleep = sleepDays > 0 ? totalSleep / sleepDays : 0;
+                
+                // Calculate productivity score
+                const productivity = productivityScores.length > 0 ? 
+                    Math.round(productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length) : 0;
+                
+                // Calculate weekly progress
+                const weeklyProgress = Math.min(100, Math.round((productivity + (avgSleep >= 7 ? 30 : 15)) / 1.3));
+                
+                // Get tasks data from Firebase
+                const tasksSnapshot = await db.collection('users').doc(currentUser.uid)
+                    .collection('tasks').get();
+                const tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const today = new Date().toISOString().split('T')[0];
+                const todayTasks = tasks.filter(task => task.date === today).length;
+                const completedTasks = tasks.filter(task => task.completed).length;
+                
+                // Get goals data from Firebase
+                const goalsSnapshot = await db.collection('users').doc(currentUser.uid)
+                    .collection('goals').get();
+                const goals = goalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const goalsAchieved = goals.filter(goal => goal.completed).length;
+                
+                return {
+                    todayTasks: todayTasks,
+                    productivity: productivity,
+                    studyTime: avgStudy.toFixed(1),
+                    weeklyProgress: weeklyProgress,
+                    completedTasks: completedTasks,
+                    avgSleep: avgSleep.toFixed(1),
+                    goalsAchieved: goalsAchieved
+                };
+            } catch (error) {
+                console.error('Error calculating statistics:', error);
+                return {
+                    todayTasks: 0,
+                    productivity: 0,
+                    studyTime: '0.0',
+                    weeklyProgress: 0,
+                    completedTasks: 0,
+                    avgSleep: '0.0',
+                    goalsAchieved: 0
+                };
             }
-            
-            // Calculate averages
-            const avgStudy = studyDays > 0 ? totalStudy / studyDays : 0;
-            const avgSleep = sleepDays > 0 ? totalSleep / sleepDays : 0;
-            
-            // Calculate productivity score
-            const productivity = productivityScores.length > 0 ? 
-                Math.round(productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length) : 0;
-            
-            // Calculate weekly progress
-            const weeklyProgress = Math.min(100, Math.round((productivity + (avgSleep >= 7 ? 30 : 15)) / 1.3));
-            
-            // Get tasks data
-            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-            const todayTasks = tasks.filter(task => task.date === new Date().toISOString().split('T')[0]).length;
-            const completedTasks = tasks.filter(task => task.completed).length;
-            
-            // Get goals data
-            const goals = JSON.parse(localStorage.getItem('goals') || '[]');
-            const goalsAchieved = goals.filter(goal => goal.completed).length;
-            
-            return {
-                todayTasks: todayTasks,
-                productivity: productivity,
-                studyTime: avgStudy.toFixed(1),
-                weeklyProgress: weeklyProgress,
-                completedTasks: completedTasks,
-                avgSleep: avgSleep.toFixed(1),
-                goalsAchieved: goalsAchieved
-            };
         }
 
-        // Save all data
-        function saveAllData() {
-            if (isLoading) return;
+        // Save all data - FIXED VERSION
+        async function saveAllData() {
+            if (isLoading || !currentUser) return;
             
             isLoading = true;
             const button = event.target;
@@ -1039,74 +1204,132 @@
             button.textContent = 'Saving...';
             button.disabled = true;
             
-            setTimeout(() => {
-                // Collect all data
+            try {
                 const today = new Date().toISOString().split('T')[0];
+                
+                console.log('=== SAVING DATA TO FIREBASE ===');
+                console.log('Date:', today);
+                console.log('User ID:', currentUser.uid);
+                console.log('User Email:', currentUser.email);
+                
                 const data = {
                     date: today,
-                    timestamp: new Date().toISOString(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(), // CRITICAL FIX
                     trackers: {}
                 };
                 
                 // Collect tracker data
+                let hasData = false;
                 document.querySelectorAll('.tracker-input').forEach(input => {
                     const type = input.dataset.type;
-                    data.trackers[type] = input.value;
+                    if (input.value) {
+                        data.trackers[type] = input.value;
+                        console.log(`  ✓ ${type}: ${input.value}`);
+                        hasData = true;
+                    }
                 });
                 
                 // Collect schedule data
                 const scheduleTextarea = document.querySelector('[data-type="schedule"]');
-                if (scheduleTextarea) {
+                if (scheduleTextarea && scheduleTextarea.value) {
                     data.trackers['schedule'] = scheduleTextarea.value;
+                    console.log('  ✓ schedule: (saved)');
+                    hasData = true;
                 }
                 
-                // Save daily summary
-                localStorage.setItem(`daily_summary_${today}`, JSON.stringify(data));
+                if (!hasData) {
+                    console.log('⚠️ No data to save!');
+                    showNotification('Please enter some values first!', 'error');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    isLoading = false;
+                    return;
+                }
                 
+                console.log('Full data object:', JSON.stringify(data, null, 2));
+                
+                // Save to Firebase
+                const docRef = db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').doc(today);
+                    
+                await docRef.set(data, { merge: true });
+                
+                console.log('✅ Data saved to Firebase successfully!');
+                
+                // Verify save immediately
+                const savedDoc = await docRef.get();
+                console.log('📋 Verification:');
+                console.log('  - Document exists:', savedDoc.exists);
+                if (savedDoc.exists) {
+                    const savedData = savedDoc.data();
+                    console.log('  - Saved trackers:', Object.keys(savedData.trackers || {}));
+                    console.log('  - Full data:', JSON.stringify(savedData, null, 2));
+                }
+                
+                button.textContent = '✓ Saved!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+                
+                showNotification('All data saved successfully! Check History page.', 'success');
+            } catch (error) {
+                console.error('❌ Error saving data:', error);
+                console.error('Error details:', error.message);
                 button.textContent = originalText;
+                showNotification('Error saving data: ' + error.message, 'error');
+            } finally {
                 button.disabled = false;
                 isLoading = false;
-                
-                showNotification('All data saved successfully!', 'success');
-            }, 1000);
+            }
         }
 
         // Quick action functions
-        function addTask() {
+        async function addTask() {
+            if (!currentUser) return;
+            
             const taskTitle = prompt('Enter task title:');
             if (!taskTitle) return;
             
-            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-            const newTask = {
-                id: Date.now().toString(),
-                title: taskTitle,
-                date: new Date().toISOString().split('T')[0],
-                completed: false,
-                createdAt: new Date().toISOString()
-            };
-            
-            tasks.push(newTask);
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            
-            updateAllStats();
-            showNotification('Task added successfully!', 'success');
+            try {
+                const newTask = {
+                    title: taskTitle,
+                    date: new Date().toISOString().split('T')[0],
+                    completed: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('tasks').add(newTask);
+                
+                updateAllStats();
+                showNotification('Task added successfully!', 'success');
+            } catch (error) {
+                console.error('Error adding task:', error);
+                showNotification('Error adding task. Please try again.', 'error');
+            }
         }
 
-        function takeNote() {
+        async function takeNote() {
+            if (!currentUser) return;
+            
             const note = prompt('Enter your note:');
             if (!note) return;
             
-            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-            const newNote = {
-                id: Date.now().toString(),
-                content: note,
-                timestamp: new Date().toISOString()
-            };
-            
-            notes.push(newNote);
-            localStorage.setItem('notes', JSON.stringify(notes));
-            
-            showNotification('Note saved!', 'success');
+            try {
+                const newNote = {
+                    content: note,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('notes').add(newNote);
+                
+                showNotification('Note saved!', 'success');
+            } catch (error) {
+                console.error('Error saving note:', error);
+                showNotification('Error saving note. Please try again.', 'error');
+            }
         }
 
         function startTimer() {
@@ -1119,22 +1342,16 @@
                 return;
             }
             
-            const startTime = Date.now();
-            localStorage.setItem('timerStart', startTime.toString());
-            localStorage.setItem('timerMinutes', timerMinutes.toString());
-            
             showNotification(`Timer started for ${timerMinutes} minutes!`, 'success');
             
             // Auto-complete timer
             setTimeout(() => {
                 showNotification('Timer complete! Take a break.', 'success');
-                localStorage.removeItem('timerStart');
-                localStorage.removeItem('timerMinutes');
             }, timerMinutes * 60 * 1000);
         }
 
-        function viewStats() {
-            const stats = calculateStatistics();
+        async function viewStats() {
+            const stats = await calculateStatistics();
             const message = `Your Daily Stats:\n\n` +
                            `• Study Hours: ${stats.studyTime}h\n` +
                            `• Sleep: ${stats.avgSleep}h\n` +
@@ -1171,7 +1388,7 @@
         // Start real-time updates
         function startRealTimeUpdates() {
             // Update greeting every hour
-            setInterval(updateGreeting, 3600000);
+            setInterval(() => updateGreeting(), 3600000);
             
             // Update date at midnight
             setInterval(updateCurrentDate, 86400000);

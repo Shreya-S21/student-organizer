@@ -176,12 +176,19 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .filters-title {
             color: #2c3e50;
             font-size: 1.3rem;
             font-weight: 600;
+        }
+
+        .filters-actions {
+            display: flex;
+            gap: 10px;
         }
 
         .filters-grid {
@@ -232,6 +239,11 @@
 
         .btn:hover {
             background: #2980b9;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .btn-sm {
@@ -421,7 +433,7 @@
 
         .note-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
@@ -432,15 +444,12 @@
             flex: 1;
         }
 
-        .note-actions {
-            display: flex;
-            gap: 8px;
-        }
-
         .note-content {
             color: #7f8c8d;
             line-height: 1.5;
             margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
         .note-footer {
@@ -478,9 +487,10 @@
             padding: 15px 20px;
             background: #2ecc71;
             color: white;
-            border-radius: 5px;
+            border-radius: 8px;
             z-index: 10000;
             animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         @keyframes slideIn {
@@ -495,18 +505,33 @@
         }
 
         /* Loading State */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
 
         .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ecf0f1;
             border-radius: 50%;
-            border-top-color: #fff;
+            border-top-color: #3498db;
             animation: spin 1s ease-in-out infinite;
         }
 
@@ -530,8 +555,15 @@
 
             .filters-header {
                 flex-direction: column;
-                gap: 15px;
                 align-items: stretch;
+            }
+
+            .filters-actions {
+                justify-content: stretch;
+            }
+
+            .filters-actions .btn {
+                flex: 1;
             }
 
             .history-item {
@@ -544,6 +576,7 @@
                 flex-direction: row;
                 align-items: center;
                 justify-content: space-between;
+                width: 100%;
             }
 
             .notes-grid {
@@ -559,6 +592,11 @@
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -628,7 +666,9 @@
             <div class="filters-section">
                 <div class="filters-header">
                     <h2 class="filters-title">Filter History</h2>
-                    <div>
+                    <div class="filters-actions">
+                        <button class="btn btn-sm" onclick="checkTodayData()">🔍 Check Today</button>
+                        <button class="btn btn-sm" onclick="loadHistoryData().then(() => applyFilters())">🔄 Refresh</button>
                         <button class="btn btn-sm btn-secondary" onclick="resetFilters()">Reset Filters</button>
                         <button class="btn btn-sm btn-success" onclick="exportData()">Export Data</button>
                     </div>
@@ -696,20 +736,135 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
-        // Global variables
+        // =============================================
+        // FIREBASE CONFIGURATION
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
+            authDomain: "student-organizer-53420.firebaseapp.com",
+            projectId: "student-organizer-53420",
+            storageBucket: "student-organizer-53420.firebasestorage.app",
+            messagingSenderId: "481845921136",
+            appId: "1:481845921136:web:10ce801027f42b2311bbb5",
+            measurementId: "G-7365W6G880"
+        };
+
+        // Initialize Firebase
+        let auth, db;
+        let currentUser = null;
+        let isLoading = false;
+
+        // Data storage
         let allActivities = [];
         let allNotes = [];
         let filteredActivities = [];
         let filteredNotes = [];
-        let isLoading = false;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (error) {
+            console.error('Firebase init error:', error);
+        }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadHistoryData();
-            setupDateFilters();
-            renderHistory();
+            showLoading();
+            
+            // Check authentication
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    initializePage();
+                } else {
+                    // Not logged in, redirect to login
+                    window.location.href = 'index.html';
+                }
+            });
         });
+
+        // Initialize page
+        async function initializePage() {
+            try {
+                setupDateFilters();
+                await loadHistoryData();
+                applyFilters();
+                hideLoading();
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                hideLoading();
+                showNotification('Error loading data. Please refresh the page.', 'error');
+            }
+        }
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.remove('active');
+        }
+
+        // Check today's data directly from Firebase
+        async function checkTodayData() {
+            if (!currentUser) {
+                alert('Not logged in!');
+                return;
+            }
+            
+            const today = new Date().toISOString().split('T')[0];
+            console.log('=== CHECKING TODAY\'S DATA DIRECTLY ===');
+            console.log('Date:', today);
+            console.log('User ID:', currentUser.uid);
+            console.log('User Email:', currentUser.email);
+            
+            try {
+                // Check if today's document exists
+                const docRef = db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').doc(today);
+                
+                const doc = await docRef.get();
+                
+                console.log('Document exists:', doc.exists);
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    console.log('Today\'s data:', JSON.stringify(data, null, 2));
+                    
+                    if (data.trackers) {
+                        console.log('Trackers found:', Object.keys(data.trackers));
+                        Object.keys(data.trackers).forEach(key => {
+                            console.log(`  ${key}: ${data.trackers[key]}`);
+                        });
+                        
+                        alert(`✅ Found today's data!\n\nTrackers:\n${Object.keys(data.trackers).map(k => `${k}: ${data.trackers[k]}`).join('\n')}\n\nCheck console for full details.`);
+                    } else {
+                        alert('❌ Document exists but no trackers found!');
+                    }
+                } else {
+                    console.log('❌ No document found for today!');
+                    alert(`❌ No data saved for today (${today}).\n\nMake sure you:\n1. Entered values on Dashboard\n2. Clicked "Save All Data" button\n3. Are logged in with same account`);
+                }
+                
+                // Also check all documents
+                const allDocs = await db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').get();
+                console.log('Total documents in dailyData:', allDocs.size);
+                console.log('All dates with data:', allDocs.docs.map(d => d.id).join(', '));
+                
+            } catch (error) {
+                console.error('Error checking data:', error);
+                alert('Error checking Firebase: ' + error.message);
+            }
+        }
 
         // Toggle sidebar menu
         function toggleMenu() {
@@ -723,70 +878,130 @@
         }
 
         // Logout function
-        function logout() {
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.clear();
-                window.location.href = 'index.html';
+                try {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    showNotification('Error logging out. Please try again.', 'error');
+                }
             }
         }
 
-        // Load all history data from localStorage
-        function loadHistoryData() {
+        // Load all history data from Firebase
+        async function loadHistoryData() {
+            if (!currentUser) return;
+            
             allActivities = [];
             allNotes = [];
 
-            // Load tracker data from last 365 days
-            for (let i = 0; i < 365; i++) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
+            try {
+                console.log('=== LOADING HISTORY DATA ===');
+                console.log('Current user:', currentUser.email);
+                console.log('Today\'s date:', new Date().toISOString().split('T')[0]);
                 
-                // Load different tracker types
-                ['sleep', 'study', 'screen', 'exercise', 'break'].forEach(type => {
-                    const value = localStorage.getItem(`tracker_${dateStr}_${type}`);
-                    if (value) {
-                        allActivities.push({
-                            id: `${type}_${dateStr}`,
-                            type: type,
-                            title: getActivityTitle(type),
-                            description: getActivityDescription(type, value),
-                            date: dateStr,
-                            value: value,
-                            icon: getActivityIcon(type)
+                // Load daily data from last 365 days
+                const dailyDataRef = db.collection('users').doc(currentUser.uid).collection('dailyData');
+                const snapshot = await dailyDataRef.get();
+                
+                console.log('Total dailyData documents:', snapshot.size);
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = doc.id; // Document ID is the date
+                    
+                    console.log('Processing date:', date, 'Data:', data);
+                    
+                    if (data.trackers) {
+                        // Process each tracker type
+                        Object.keys(data.trackers).forEach(type => {
+                            const value = data.trackers[type];
+                            
+                            // Skip schedule field and empty/null values
+                            if (type !== 'schedule' && value !== null && value !== undefined && value !== '') {
+                                console.log(`  Adding ${type}: ${value}`);
+                                allActivities.push({
+                                    id: `${type}_${date}`,
+                                    type: type,
+                                    title: getActivityTitle(type),
+                                    description: getActivityDescription(type, value),
+                                    date: date,
+                                    value: value,
+                                    icon: getActivityIcon(type),
+                                    timestamp: data.lastUpdated || data.timestamp || new Date(date)
+                                });
+                            }
                         });
                     }
                 });
-            }
 
-            // Load tasks history
-            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-            tasks.forEach(task => {
-                allActivities.push({
-                    id: `task_${task.id}`,
-                    type: 'task',
-                    title: 'Task ' + (task.completed ? 'Completed' : 'Created'),
-                    description: task.title,
-                    date: task.date,
-                    completed: task.completed,
-                    icon: '✅'
+                // Load tasks
+                const tasksRef = db.collection('users').doc(currentUser.uid).collection('tasks');
+                const tasksSnapshot = await tasksRef.get();
+                
+                console.log('Total tasks:', tasksSnapshot.size);
+                
+                tasksSnapshot.forEach(doc => {
+                    const task = doc.data();
+                    const taskDate = task.date || new Date().toISOString().split('T')[0];
+                    allActivities.push({
+                        id: `task_${doc.id}`,
+                        type: 'task',
+                        title: 'Task ' + (task.completed ? 'Completed' : 'Created'),
+                        description: task.title,
+                        date: taskDate,
+                        completed: task.completed,
+                        icon: task.completed ? '✅' : '📝',
+                        timestamp: task.createdAt || new Date()
+                    });
                 });
-            });
 
-            // Load notes history
-            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-            allNotes = notes.map(note => ({
-                id: note.id,
-                content: note.content,
-                timestamp: note.timestamp,
-                date: note.timestamp.split('T')[0]
-            }));
+                // Load notes
+                const notesRef = db.collection('users').doc(currentUser.uid).collection('notes');
+                const notesSnapshot = await notesRef.get();
+                
+                console.log('Total notes:', notesSnapshot.size);
+                
+                notesSnapshot.forEach(doc => {
+                    const note = doc.data();
+                    const timestamp = note.timestamp?.toDate ? note.timestamp.toDate() : new Date();
+                    
+                    allNotes.push({
+                        id: doc.id,
+                        content: note.content,
+                        timestamp: timestamp,
+                        date: timestamp.toISOString().split('T')[0]
+                    });
+                });
 
-            // Sort by date (most recent first)
-            allActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
-            allNotes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                // Sort by date (most recent first)
+                allActivities.sort((a, b) => {
+                    const dateCompare = b.date.localeCompare(a.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    // If same date, sort by timestamp
+                    const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0);
+                    const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0);
+                    return timeB - timeA;
+                });
+                allNotes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            // Update statistics
-            updateStatistics();
+                console.log('=== SUMMARY ===');
+                console.log('Total loaded activities:', allActivities.length);
+                console.log('Total loaded notes:', allNotes.length);
+                
+                const today = new Date().toISOString().split('T')[0];
+                const todayActivities = allActivities.filter(a => a.date === today);
+                console.log('Today\'s activities:', todayActivities.length);
+                console.log('Today\'s activities detail:', todayActivities);
+
+                // Update statistics
+                updateStatistics();
+            } catch (error) {
+                console.error('Error loading history data:', error);
+                showNotification('Error loading data from Firebase', 'error');
+            }
         }
 
         // Get activity title
@@ -838,6 +1053,8 @@
             document.getElementById('to-date').value = today;
             document.getElementById('from-date').max = today;
             document.getElementById('to-date').max = today;
+            
+            console.log('Date filters set:', thirtyDaysAgoStr, 'to', today);
         }
 
         // Apply filters
@@ -847,6 +1064,8 @@
             const fromDate = document.getElementById('from-date').value;
             const toDate = document.getElementById('to-date').value;
 
+            console.log('Applying filters - Time:', timePeriod, 'Type:', activityType, 'From:', fromDate, 'To:', toDate);
+
             // Filter activities
             filteredActivities = [...allActivities];
 
@@ -855,9 +1074,12 @@
                 const daysAgo = parseInt(timePeriod);
                 const cutoffDate = new Date();
                 cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+                const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+                
                 filteredActivities = filteredActivities.filter(activity => 
-                    new Date(activity.date) >= cutoffDate
+                    activity.date >= cutoffDateStr
                 );
+                console.log('After time filter:', filteredActivities.length);
             }
 
             // Apply activity type filter
@@ -865,6 +1087,7 @@
                 filteredActivities = filteredActivities.filter(activity => 
                     activity.type === activityType
                 );
+                console.log('After type filter:', filteredActivities.length);
             }
 
             // Apply date range filter
@@ -872,11 +1095,13 @@
                 filteredActivities = filteredActivities.filter(activity => 
                     activity.date >= fromDate
                 );
+                console.log('After from-date filter:', filteredActivities.length);
             }
             if (toDate) {
                 filteredActivities = filteredActivities.filter(activity => 
                     activity.date <= toDate
                 );
+                console.log('After to-date filter:', filteredActivities.length);
             }
 
             // Filter notes
@@ -887,6 +1112,9 @@
             if (toDate) {
                 filteredNotes = filteredNotes.filter(note => note.date <= toDate);
             }
+
+            console.log('Final filtered activities:', filteredActivities.length);
+            console.log('Final filtered notes:', filteredNotes.length);
 
             // Re-render with filtered data
             renderHistory();
@@ -925,14 +1153,17 @@
                     <div class="empty-state">
                         <div class="empty-icon">📊</div>
                         <h3 class="empty-title">No activities found</h3>
-                        <p class="empty-description">No activities match your current filters.</p>
+                        <p class="empty-description">No activities match your current filters. Try adjusting the date range or activity type.</p>
+                        <button class="btn" onclick="resetFilters()">Reset Filters</button>
                     </div>
                 `;
                 return;
             }
 
             container.innerHTML = filteredActivities.map(activity => {
-                const date = new Date(activity.date).toLocaleDateString('en-US', {
+                const date = new Date(activity.date);
+                const dateStr = date.toLocaleDateString('en-US', {
+                    weekday: 'short',
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
@@ -946,12 +1177,24 @@
                             <div class="history-description">${activity.description}</div>
                         </div>
                         <div class="history-meta">
-                            <div class="history-date">${date}</div>
-                            ${activity.value ? `<div class="history-value">${activity.value}</div>` : ''}
+                            <div class="history-date">${dateStr}</div>
+                            ${activity.value ? `<div class="history-value">${activity.value}${getValueUnit(activity.type)}</div>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // Get value unit for display
+        function getValueUnit(type) {
+            const units = {
+                sleep: 'h',
+                study: 'h',
+                screen: 'h',
+                exercise: ' min',
+                break: ' breaks'
+            };
+            return units[type] || '';
         }
 
         // Render notes
@@ -963,7 +1206,7 @@
                     <div class="empty-state">
                         <div class="empty-icon">📝</div>
                         <h3 class="empty-title">No notes found</h3>
-                        <p class="empty-description">No notes match your current date filters.</p>
+                        <p class="empty-description">No notes match your current date filters. Try adjusting the date range.</p>
                     </div>
                 `;
                 return;
@@ -973,7 +1216,8 @@
                 const date = new Date(note.timestamp);
                 const dateStr = date.toLocaleDateString('en-US', {
                     month: 'short',
-                    day: 'numeric'
+                    day: 'numeric',
+                    year: 'numeric'
                 });
                 const timeStr = date.toLocaleTimeString('en-US', {
                     hour: '2-digit',
@@ -981,16 +1225,14 @@
                 });
                 
                 // Truncate long notes
-                const preview = note.content.length > 100 ? 
-                    note.content.substring(0, 100) + '...' : note.content;
+                const preview = note.content.length > 150 ? 
+                    note.content.substring(0, 150) + '...' : note.content;
                 
                 return `
                     <div class="note-card">
                         <div class="note-header">
-                            <div class="note-title">Note ${note.id}</div>
-                            <div class="note-actions">
-                                <button class="btn btn-sm btn-danger" onclick="deleteNote('${note.id}')">Delete</button>
-                            </div>
+                            <div class="note-title">📝 Note</div>
+                            <button class="btn btn-sm btn-danger" onclick="deleteNote('${note.id}')">Delete</button>
                         </div>
                         <div class="note-content">${preview}</div>
                         <div class="note-footer">
@@ -1016,6 +1258,7 @@
             let sleepDays = 0;
             let totalExerciseMinutes = 0;
             let activeDays = new Set();
+            let completedTasks = 0;
             
             allActivities.forEach(activity => {
                 activeDays.add(activity.date);
@@ -1030,11 +1273,12 @@
                 if (activity.type === 'exercise') {
                     totalExerciseMinutes += parseFloat(activity.value || 0);
                 }
+                if (activity.type === 'task' && activity.completed) {
+                    completedTasks++;
+                }
             });
 
-            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-            const completedTasks = tasks.filter(task => task.completed).length;
-            const avgSleep = sleepDays > 0 ? (totalSleepHours / sleepDays).toFixed(1) : 0;
+            const avgSleep = sleepDays > 0 ? (totalSleepHours / sleepDays).toFixed(1) : '0.0';
 
             // Update display
             document.getElementById('total-study').textContent = totalStudyHours.toFixed(1);
@@ -1045,21 +1289,26 @@
         }
 
         // Delete note
-        function deleteNote(noteId) {
+        async function deleteNote(noteId) {
             if (!confirm('Are you sure you want to delete this note?')) {
                 return;
             }
 
-            allNotes = allNotes.filter(note => note.id !== noteId);
-            localStorage.setItem('notes', JSON.stringify(allNotes.map(note => ({
-                id: note.id,
-                content: note.content,
-                timestamp: note.timestamp
-            }))));
-            
-            // Update filtered notes
-            applyFilters();
-            showNotification('Note deleted successfully', 'success');
+            try {
+                // Delete from Firebase
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('notes').doc(noteId).delete();
+                
+                // Remove from local arrays
+                allNotes = allNotes.filter(note => note.id !== noteId);
+                
+                // Reapply filters and render
+                applyFilters();
+                showNotification('Note deleted successfully', 'success');
+            } catch (error) {
+                console.error('Error deleting note:', error);
+                showNotification('Error deleting note. Please try again.', 'error');
+            }
         }
 
         // Export data
@@ -1081,7 +1330,8 @@
                         activityType: document.getElementById('activity-type').value,
                         fromDate: document.getElementById('from-date').value,
                         toDate: document.getElementById('to-date').value
-                    }
+                    },
+                    userEmail: currentUser.email
                 };
 
                 const dataStr = JSON.stringify(exportData, null, 2);
@@ -1094,6 +1344,7 @@
                 
                 showNotification('History data exported successfully!', 'success');
             } catch (error) {
+                console.error('Error exporting data:', error);
                 showNotification('Error exporting data. Please try again.', 'error');
             }
         }
@@ -1148,9 +1399,10 @@
         document.getElementById('overlay').addEventListener('click', toggleMenu);
 
         // Auto-refresh data every 30 seconds
-        setInterval(() => {
-            if (!isLoading) {
-                loadHistoryData();
+        setInterval(async () => {
+            if (!isLoading && currentUser) {
+                console.log('Auto-refreshing data...');
+                await loadHistoryData();
                 applyFilters();
             }
         }, 30000);

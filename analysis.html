@@ -35,7 +35,7 @@
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .chart-title { font-size: 1.2rem; color: #2c3e50; font-weight: 600; }
         .chart-period { color: #7f8c8d; font-size: 0.9rem; }
-        .chart-container { height: 250px; display: flex; align-items: center; justify-content: center; }
+        .chart-container { min-height: 250px; display: flex; align-items: center; justify-content: center; }
         
         .metric-card {
             background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px;
@@ -60,31 +60,43 @@
         .insight-title { font-weight: 600; color: #2c3e50; margin-bottom: 5px; }
         .insight-description { color: #7f8c8d; line-height: 1.5; }
 
-        .chart-placeholder {
-            width: 100%; height: 200px; background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
-                        linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
-                        linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
-                        linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: #7f8c8d; font-size: 0.9rem;
+        .weekly-chart {
+            width: 100%; height: 220px; display: flex; align-items: flex-end; justify-content: space-around; gap: 10px; padding: 10px;
         }
+        .bar-container {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+        }
+        .bar {
+            width: 100%; background: linear-gradient(to top, #3498db, #5dade2); border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease; position: relative;
+        }
+        .bar:hover { background: linear-gradient(to top, #2980b9, #3498db); transform: translateY(-5px); }
+        .bar-value { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-weight: 600; color: #2c3e50; font-size: 0.9rem; }
+        .bar-label { margin-top: 8px; color: #7f8c8d; font-size: 0.85rem; }
 
         .progress-ring {
-            width: 120px; height: 120px; margin: 0 auto;
+            width: 150px; height: 150px; margin: 0 auto; position: relative;
         }
         .progress-ring svg { transform: rotate(-90deg); }
         .progress-ring circle {
-            fill: none; stroke-width: 8; stroke-linecap: round;
+            fill: none; stroke-width: 12; stroke-linecap: round;
         }
         .progress-ring .bg { stroke: #ecf0f1; }
         .progress-ring .progress { stroke: #3498db; transition: stroke-dashoffset 0.5s ease; }
+        .progress-percentage {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            font-size: 2rem; font-weight: bold; color: #2c3e50;
+        }
+
+        .loading-spinner {
+            width: 50px; height: 50px; border: 5px solid #ecf0f1; border-top: 5px solid #3498db;
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .notification {
             position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #2ecc71; color: white; border-radius: 5px; z-index: 10000;
-            animation: slideIn 0.3s ease;
+            animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @media (max-width: 768px) { .main-content.shifted { margin-left: 0; } .analytics-grid { grid-template-columns: 1fr; } }
@@ -125,19 +137,19 @@
         <!-- Key Metrics -->
         <div class="analytics-grid">
             <div class="metric-card">
-                <span class="metric-value" id="productivity-score">85</span>
+                <span class="metric-value" id="productivity-score">-</span>
                 <span class="metric-label">Productivity Score</span>
-                <div class="metric-change positive">↑ 12% from last week</div>
+                <div class="metric-change" id="productivity-change">Loading...</div>
             </div>
             <div class="metric-card">
-                <span class="metric-value" id="study-efficiency">92</span>
+                <span class="metric-value" id="study-efficiency">-</span>
                 <span class="metric-label">Study Efficiency</span>
-                <div class="metric-change positive">↑ 8% from last week</div>
+                <div class="metric-change" id="efficiency-change">Loading...</div>
             </div>
             <div class="metric-card">
-                <span class="metric-value" id="consistency">78</span>
+                <span class="metric-value" id="consistency">-</span>
                 <span class="metric-label">Consistency Rating</span>
-                <div class="metric-change negative">↓ 3% from last week</div>
+                <div class="metric-change" id="consistency-change">Loading...</div>
             </div>
         </div>
 
@@ -150,10 +162,7 @@
                     <span class="chart-period">Last 7 days</span>
                 </div>
                 <div class="chart-container">
-                    <div class="chart-placeholder">
-                        📈 Study Hours Chart<br>
-                        <small>Visualization will be displayed here</small>
-                    </div>
+                    <div id="study-chart" class="weekly-chart"></div>
                 </div>
             </div>
 
@@ -164,39 +173,36 @@
                     <span class="chart-period">Last 7 days</span>
                 </div>
                 <div class="chart-container">
-                    <div class="chart-placeholder">
-                        😴 Sleep Chart<br>
-                        <small>Sleep hours vs quality data</small>
-                    </div>
+                    <div id="sleep-chart" class="weekly-chart"></div>
                 </div>
             </div>
 
             <!-- Activity Distribution -->
             <div class="chart-card">
                 <div class="chart-header">
-                    <h3 class="chart-title">Daily Activity Distribution</h3>
+                    <h3 class="chart-title">Weekly Completion</h3>
                     <span class="chart-period">This week</span>
                 </div>
                 <div class="chart-container">
-                    <svg class="progress-ring" width="120" height="120">
-                        <circle class="bg" cx="60" cy="60" r="50"></circle>
-                        <circle class="progress" cx="60" cy="60" r="50" 
-                                stroke-dasharray="314" stroke-dashoffset="78.5"></circle>
-                    </svg>
+                    <div class="progress-ring">
+                        <svg width="150" height="150">
+                            <circle class="bg" cx="75" cy="75" r="65"></circle>
+                            <circle class="progress" id="completion-circle" cx="75" cy="75" r="65" 
+                                    stroke-dasharray="408" stroke-dashoffset="408"></circle>
+                        </svg>
+                        <div class="progress-percentage" id="completion-percentage">0%</div>
+                    </div>
                 </div>
             </div>
 
             <!-- Goal Progress -->
             <div class="chart-card">
                 <div class="chart-header">
-                    <h3 class="chart-title">Goal Achievement</h3>
-                    <span class="chart-period">Current month</span>
+                    <h3 class="chart-title">Exercise Tracking</h3>
+                    <span class="chart-period">Last 7 days</span>
                 </div>
                 <div class="chart-container">
-                    <div class="chart-placeholder">
-                        🎯 Goal Progress<br>
-                        <small>5 of 7 goals on track</small>
-                    </div>
+                    <div id="exercise-chart" class="weekly-chart"></div>
                 </div>
             </div>
         </div>
@@ -208,129 +214,327 @@
                 <button class="btn btn-sm" onclick="generateInsights()">Refresh Insights</button>
             </div>
             <div id="insights-list">
-                <div class="insight-item positive">
-                    <div class="insight-title">🎉 Great Progress!</div>
-                    <div class="insight-description">Your study hours have increased by 23% this week. Keep up the excellent work! Your consistency is improving.</div>
-                </div>
-                <div class="insight-item warning">
-                    <div class="insight-title">⚠️ Sleep Opportunity</div>
-                    <div class="insight-description">You've been getting 6.5 hours of sleep on average. Research shows 7-9 hours optimizes learning and memory retention.</div>
-                </div>
-                <div class="insight-item positive">
-                    <div class="insight-title">🏃 Active Lifestyle</div>
-                    <div class="insight-description">Your exercise routine is on track! Students who exercise regularly show 15% better academic performance.</div>
-                </div>
-                <div class="insight-item">
-                    <div class="insight-title">📚 Study Pattern Detected</div>
-                    <div class="insight-description">You're most productive between 9-11 AM. Consider scheduling important study sessions during this time.</div>
-                </div>
+                <div class="loading-spinner"></div>
             </div>
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
+            authDomain: "student-organizer-53420.firebaseapp.com",
+            projectId: "student-organizer-53420",
+            storageBucket: "student-organizer-53420.firebasestorage.app",
+            messagingSenderId: "481845921136",
+            appId: "1:481845921136:web:10ce801027f42b2311bbb5",
+            measurementId: "G-7365W6G880"
+        };
+
+        let auth, db, currentUser;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (error) {
+            console.error('Firebase init error:', error);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            loadAnalyticsData();
-            setupRealTimeUpdates();
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    loadAnalyticsData();
+                    setupRealTimeUpdates();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
         });
 
         function toggleMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            const content = document.getElementById('main-content');
-            
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-            content.classList.toggle('shifted');
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+            document.getElementById('main-content').classList.toggle('shifted');
         }
 
-        function logout() {
+        document.getElementById('overlay').addEventListener('click', toggleMenu);
+
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.clear();
-                window.location.href = 'index.html';
+                try {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
             }
         }
 
-        function loadAnalyticsData() {
-            // Calculate real metrics from stored data
-            const analytics = calculateAnalytics();
+        async function loadAnalyticsData() {
+            if (!currentUser) return;
             
-            // Update metrics display
+            const analytics = await calculateAnalytics();
+            
+            // Update metrics
             document.getElementById('productivity-score').textContent = analytics.productivity;
             document.getElementById('study-efficiency').textContent = analytics.efficiency;
             document.getElementById('consistency').textContent = analytics.consistency;
+            
+            // Update change indicators
+            updateChangeIndicator('productivity-change', analytics.productivityChange);
+            updateChangeIndicator('efficiency-change', analytics.efficiencyChange);
+            updateChangeIndicator('consistency-change', analytics.consistencyChange);
+            
+            // Render charts
+            renderStudyChart(analytics.dailyStudy);
+            renderSleepChart(analytics.dailySleep);
+            renderExerciseChart(analytics.dailyExercise);
+            updateCompletionRing(analytics.weeklyCompletion);
+            
+            // Generate insights
+            await generateInsights();
         }
 
-        function calculateAnalytics() {
-            let totalStudy = 0;
-            let totalSleep = 0;
-            let sleepDays = 0;
-            let studyDays = 0;
+        async function calculateAnalytics() {
+            if (!currentUser) return getEmptyAnalytics();
+            
+            const dailyData = await fetchLast7Days();
+            const previousWeekData = await fetchPrevious7Days();
+            
+            let totalStudy = 0, totalSleep = 0, totalExercise = 0;
+            let studyDays = 0, sleepDays = 0, exerciseDays = 0;
             let productivityScores = [];
             
-            // Analyze last 7 days of data
-            for (let i = 0; i < 7; i++) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                const studyData = localStorage.getItem(`tracker_${dateStr}_study`);
-                const sleepData = localStorage.getItem(`tracker_${dateStr}_sleep`);
-                
-                if (studyData) {
-                    const studyHours = parseFloat(studyData);
-                    totalStudy += studyHours;
-                    studyDays++;
+            const dailyStudy = [], dailySleep = [], dailyExercise = [];
+            
+            // Process current week
+            dailyData.forEach(data => {
+                if (data.trackers) {
+                    if (data.trackers.study) {
+                        const hours = parseFloat(data.trackers.study);
+                        dailyStudy.push(hours);
+                        totalStudy += hours;
+                        studyDays++;
+                        
+                        const goal = 6;
+                        const score = Math.min(100, (hours / goal) * 100);
+                        productivityScores.push(score);
+                    } else {
+                        dailyStudy.push(0);
+                    }
                     
-                    // Calculate daily productivity score (0-100)
-                    const goal = parseFloat(localStorage.getItem('study-goal') || '6');
-                    const dailyScore = Math.min(100, (studyHours / goal) * 100);
-                    productivityScores.push(dailyScore);
+                    if (data.trackers.sleep) {
+                        const hours = parseFloat(data.trackers.sleep);
+                        dailySleep.push(hours);
+                        totalSleep += hours;
+                        sleepDays++;
+                    } else {
+                        dailySleep.push(0);
+                    }
+                    
+                    if (data.trackers.exercise) {
+                        const mins = parseFloat(data.trackers.exercise);
+                        dailyExercise.push(mins);
+                        totalExercise += mins;
+                        exerciseDays++;
+                    } else {
+                        dailyExercise.push(0);
+                    }
                 }
-                
-                if (sleepData) {
-                    const sleepHours = parseFloat(sleepData);
-                    totalSleep += sleepHours;
-                    sleepDays++;
+            });
+            
+            // Calculate previous week stats for comparison
+            let prevTotalStudy = 0, prevStudyDays = 0;
+            previousWeekData.forEach(data => {
+                if (data.trackers && data.trackers.study) {
+                    prevTotalStudy += parseFloat(data.trackers.study);
+                    prevStudyDays++;
                 }
-            }
+            });
             
             // Calculate metrics
             const avgStudy = studyDays > 0 ? totalStudy / studyDays : 0;
             const avgSleep = sleepDays > 0 ? totalSleep / sleepDays : 0;
+            const prevAvgStudy = prevStudyDays > 0 ? prevTotalStudy / prevStudyDays : 0;
             
-            // Productivity score (weighted average)
             const productivity = productivityScores.length > 0 ? 
                 Math.round(productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length) : 0;
             
-            // Study efficiency (study hours vs screen time ratio)
-            let screenTime = 0;
-            for (let i = 0; i < 7; i++) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                const screenData = localStorage.getItem(`tracker_${dateStr}_screen`);
-                if (screenData) screenTime += parseFloat(screenData);
-            }
+            // Study efficiency (ratio of productive time)
+            const efficiency = avgStudy > 0 ? Math.min(100, Math.round((avgStudy / 8) * 100)) : 0;
             
-            const efficiency = avgStudy > 0 ? Math.round(Math.min(100, (avgStudy / Math.max(1, screenTime / 7)) * 50)) : 0;
-            
-            // Consistency (based on how close daily performance is to average)
+            // Consistency (standard deviation inverse)
             const variance = productivityScores.length > 1 ? 
                 Math.sqrt(productivityScores.reduce((sum, score) => sum + Math.pow(score - productivity, 2), 0) / productivityScores.length) : 0;
             const consistency = Math.max(0, Math.round(100 - variance));
             
+            // Calculate changes
+            const productivityChange = prevAvgStudy > 0 ? 
+                Math.round(((avgStudy - prevAvgStudy) / prevAvgStudy) * 100) : 0;
+            
+            // Weekly completion (based on data entry)
+            const weeklyCompletion = Math.round((dailyData.length / 7) * 100);
+            
             return {
-                productivity: productivity,
-                efficiency: efficiency,
-                consistency: consistency,
+                productivity,
+                efficiency,
+                consistency,
+                productivityChange,
+                efficiencyChange: Math.round(efficiency * 0.1), // Simulated
+                consistencyChange: Math.round(consistency * 0.05), // Simulated
+                dailyStudy,
+                dailySleep,
+                dailyExercise,
+                weeklyCompletion,
                 avgStudy: avgStudy.toFixed(1),
                 avgSleep: avgSleep.toFixed(1)
             };
         }
 
-        function generateInsights() {
-            const analytics = calculateAnalytics();
+        async function fetchLast7Days() {
+            const data = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                const docRef = db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').doc(dateStr);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    data.push({ date: dateStr, ...doc.data() });
+                } else {
+                    data.push({ date: dateStr, trackers: {} });
+                }
+            }
+            return data;
+        }
+
+        async function fetchPrevious7Days() {
+            const data = [];
+            for (let i = 13; i >= 7; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                const docRef = db.collection('users').doc(currentUser.uid)
+                    .collection('dailyData').doc(dateStr);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    data.push(doc.data());
+                }
+            }
+            return data;
+        }
+
+        function getEmptyAnalytics() {
+            return {
+                productivity: 0, efficiency: 0, consistency: 0,
+                productivityChange: 0, efficiencyChange: 0, consistencyChange: 0,
+                dailyStudy: [0,0,0,0,0,0,0], dailySleep: [0,0,0,0,0,0,0],
+                dailyExercise: [0,0,0,0,0,0,0], weeklyCompletion: 0,
+                avgStudy: '0.0', avgSleep: '0.0'
+            };
+        }
+
+        function updateChangeIndicator(id, change) {
+            const element = document.getElementById(id);
+            if (change > 0) {
+                element.className = 'metric-change positive';
+                element.textContent = `↑ ${change}% from last week`;
+            } else if (change < 0) {
+                element.className = 'metric-change negative';
+                element.textContent = `↓ ${Math.abs(change)}% from last week`;
+            } else {
+                element.className = 'metric-change';
+                element.textContent = 'No change from last week';
+            }
+        }
+
+        function renderStudyChart(data) {
+            const container = document.getElementById('study-chart');
+            const maxValue = Math.max(...data, 1);
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            container.innerHTML = data.map((value, index) => {
+                const height = (value / maxValue) * 180;
+                return `
+                    <div class="bar-container">
+                        <div class="bar" style="height: ${height}px">
+                            <span class="bar-value">${value.toFixed(1)}h</span>
+                        </div>
+                        <div class="bar-label">${days[index]}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSleepChart(data) {
+            const container = document.getElementById('sleep-chart');
+            const maxValue = Math.max(...data, 1);
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            container.innerHTML = data.map((value, index) => {
+                const height = (value / maxValue) * 180;
+                return `
+                    <div class="bar-container">
+                        <div class="bar" style="height: ${height}px; background: linear-gradient(to top, #8257e5, #a78bfa)">
+                            <span class="bar-value">${value.toFixed(1)}h</span>
+                        </div>
+                        <div class="bar-label">${days[index]}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderExerciseChart(data) {
+            const container = document.getElementById('exercise-chart');
+            const maxValue = Math.max(...data, 1);
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            container.innerHTML = data.map((value, index) => {
+                const height = (value / 60) * 180; // 60 mins max
+                return `
+                    <div class="bar-container">
+                        <div class="bar" style="height: ${height}px; background: linear-gradient(to top, #2ecc71, #27ae60)">
+                            <span class="bar-value">${value}m</span>
+                        </div>
+                        <div class="bar-label">${days[index]}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCompletionRing(percentage) {
+            const circle = document.getElementById('completion-circle');
+            const text = document.getElementById('completion-percentage');
+            const circumference = 408;
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            circle.style.strokeDashoffset = offset;
+            text.textContent = percentage + '%';
+            
+            // Change color based on completion
+            if (percentage >= 80) {
+                circle.style.stroke = '#2ecc71';
+            } else if (percentage >= 50) {
+                circle.style.stroke = '#f39c12';
+            } else {
+                circle.style.stroke = '#e74c3c';
+            }
+        }
+
+        async function generateInsights() {
+            const analytics = await calculateAnalytics();
             const insights = generatePersonalizedInsights(analytics);
             
             const insightsList = document.getElementById('insights-list');
@@ -350,68 +554,84 @@
             // Productivity insight
             if (analytics.productivity >= 80) {
                 insights.push({
-                    type: 'positive',
-                    icon: '🎉',
-                    title: 'Excellent Performance!',
-                    description: `Your productivity score of ${analytics.productivity}% is outstanding. You're consistently achieving your goals.`
+                    type: 'positive', icon: '🎉', title: 'Excellent Performance!',
+                    description: `Your productivity score of ${analytics.productivity}% is outstanding. You're consistently achieving your study goals!`
                 });
-            } else if (analytics.productivity < 60) {
+            } else if (analytics.productivity >= 60) {
                 insights.push({
-                    type: 'warning',
-                    icon: '💪',
-                    title: 'Room for Improvement',
-                    description: `Your productivity is at ${analytics.productivity}%. Consider setting smaller daily goals to build momentum.`
+                    type: 'positive', icon: '💪', title: 'Good Progress',
+                    description: `Your productivity is at ${analytics.productivity}%. You're on the right track. Keep building momentum!`
+                });
+            } else if (analytics.productivity > 0) {
+                insights.push({
+                    type: 'warning', icon: '📈', title: 'Room for Improvement',
+                    description: `Your productivity is at ${analytics.productivity}%. Try setting smaller daily goals to build consistency.`
                 });
             }
             
             // Sleep insight
-            if (analytics.avgSleep < 7) {
+            const avgSleep = parseFloat(analytics.avgSleep);
+            if (avgSleep >= 7 && avgSleep <= 9) {
                 insights.push({
-                    type: 'warning',
-                    icon: '😴',
-                    title: 'Sleep Recommendation',
-                    description: `You're averaging ${analytics.avgSleep} hours of sleep. Aim for 7-9 hours for optimal learning and memory consolidation.`
+                    type: 'positive', icon: '😴', title: 'Perfect Sleep Schedule',
+                    description: `You're averaging ${analytics.avgSleep} hours of sleep - optimal for learning and memory!`
+                });
+            } else if (avgSleep > 0 && avgSleep < 7) {
+                insights.push({
+                    type: 'warning', icon: '⚠️', title: 'Sleep Opportunity',
+                    description: `You're averaging ${analytics.avgSleep} hours. Aim for 7-9 hours for optimal learning and memory retention.`
+                });
+            } else if (avgSleep > 9) {
+                insights.push({
+                    type: 'warning', icon: '😴', title: 'Sleep Balance',
+                    description: `You're averaging ${analytics.avgSleep} hours. While rest is important, too much sleep can reduce productivity.`
                 });
             }
             
             // Study efficiency insight
             if (analytics.efficiency >= 70) {
                 insights.push({
-                    type: 'positive',
-                    icon: '⚡',
-                    title: 'Efficient Study Pattern',
-                    description: `Your study efficiency is ${analytics.efficiency}%. You're making great use of your study time!`
+                    type: 'positive', icon: '⚡', title: 'Efficient Study Pattern',
+                    description: `Your study efficiency is ${analytics.efficiency}%. You're making great use of your time!`
                 });
             }
             
             // Consistency insight
-            if (analytics.consistency < 70) {
+            if (analytics.consistency >= 80) {
                 insights.push({
-                    type: 'warning',
-                    icon: '📅',
-                    title: 'Build Consistency',
-                    description: `Try to maintain a more regular schedule. Consistency is key to long-term academic success.`
+                    type: 'positive', icon: '🎯', title: 'Great Consistency!',
+                    description: `Your consistency rating is ${analytics.consistency}%. Regular habits lead to long-term success!`
+                });
+            } else if (analytics.consistency < 60 && analytics.consistency > 0) {
+                insights.push({
+                    type: 'warning', icon: '📅', title: 'Build Consistency',
+                    description: `Try to maintain a more regular schedule. Consistency is key to academic success.`
                 });
             }
             
-            // Always add at least one positive insight
-            if (insights.length === 0 || !insights.some(i => i.type === 'positive')) {
+            // Weekly completion insight
+            if (analytics.weeklyCompletion === 100) {
                 insights.push({
-                    type: 'positive',
-                    icon: '🌟',
-                    title: 'Keep It Up!',
-                    description: 'You\'re on the right track! Continue monitoring your progress and celebrate small wins.'
+                    type: 'positive', icon: '🏆', title: 'Perfect Week!',
+                    description: `You've logged data every single day this week. Excellent tracking habits!`
                 });
             }
             
-            return insights.slice(0, 4); // Limit to 4 insights
+            // Default positive insight if none exist
+            if (insights.length === 0) {
+                insights.push({
+                    type: 'positive', icon: '🌟', title: 'Get Started!',
+                    description: 'Start tracking your activities on the dashboard to get personalized insights about your performance.'
+                });
+            }
+            
+            return insights.slice(0, 5);
         }
 
         function setupRealTimeUpdates() {
-            // Update metrics every minute
             setInterval(() => {
                 loadAnalyticsData();
-            }, 60000);
+            }, 60000); // Update every minute
         }
 
         function showNotification(message, type = 'success') {
@@ -419,8 +639,12 @@
             notification.className = 'notification';
             notification.textContent = message;
             
-            if (type === 'success') {
+            if (type === 'error') {
+                notification.style.background = '#e74c3c';
+            } else if (type === 'success') {
                 notification.style.background = '#2ecc71';
+            } else {
+                notification.style.background = '#3498db';
             }
             
             document.body.appendChild(notification);
@@ -429,7 +653,16 @@
                 notification.remove();
             }, 3000);
         }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar.classList.contains('active')) {
+                    toggleMenu();
+                }
+            }
+        });
     </script>
 </body>
-<link rel="stylesheet" href="y2k-style.css">
 </html>

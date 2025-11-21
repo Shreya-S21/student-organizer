@@ -283,7 +283,29 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
+            authDomain: "student-organizer-53420.firebaseapp.com",
+            projectId: "student-organizer-53420",
+            storageBucket: "student-organizer-53420.firebasestorage.app",
+            messagingSenderId: "481845921136",
+            appId: "1:481845921136:web:10ce801027f42b2311bbb5",
+            measurementId: "G-7365W6G880"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Enable persistence
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
         // Toggle password visibility
         function togglePassword() {
             const passwordInput = document.getElementById('password');
@@ -300,28 +322,50 @@
             }
         }
 
-        // Show signup modal (demo - you can expand this)
+        // Show signup modal
         function showSignup() {
             const email = document.getElementById('username').value;
-            if (email) {
-                const response = confirm(`Create account for ${email}? This is a demo - any password works!`);
+            if (email && email.includes('@')) {
+                const response = confirm(`Create account for ${email}?`);
                 if (response) {
-                    // Simulate signup
-                    setTimeout(() => {
-                        alert('Account created! Welcome to Student Organizer.');
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
+                    const password = prompt('Enter a password (min 6 characters):');
+                    if (password && password.length >= 6) {
+                        createAccount(email, password);
+                    } else {
+                        alert('Password must be at least 6 characters long.');
+                    }
                 }
             } else {
-                alert('Please enter an email to sign up.');
+                alert('Please enter a valid email address to sign up.');
+            }
+        }
+
+        // Create new account
+        async function createAccount(email, password) {
+            const btn = document.getElementById('signin-btn');
+            const spinner = document.getElementById('loading-spinner');
+            const errorDiv = document.getElementById('error-message');
+            
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                alert('Account created successfully! Welcome to Student Organizer.');
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                errorDiv.textContent = getErrorMessage(error.code);
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                spinner.style.display = 'none';
             }
         }
 
         // Form submission handler
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const rememberMe = document.getElementById('remember-me').checked;
             const btn = document.getElementById('signin-btn');
@@ -335,7 +379,8 @@
             btn.innerHTML = '<span class="loading-spinner"></span>Signing In...';
             
             // Validation
-            if (!username || !password) {
+            if (!email || !password) {
+                errorDiv.textContent = 'Please fill in all fields correctly.';
                 errorDiv.style.display = 'block';
                 btn.disabled = false;
                 spinner.style.display = 'none';
@@ -343,38 +388,58 @@
                 return;
             }
             
-            // Simulate API call delay
-            setTimeout(() => {
-                try {
-                    // For demo, any username/password works
-                    const userData = {
-                        name: username.split('@')[0], // Use username without domain
-                        email: username.includes('@') ? username : `${username}@example.com`,
-                        loginTime: new Date().toISOString()
-                    };
-                    
-                    // Save if remember me is checked
-                    if (rememberMe) {
-                        localStorage.setItem('rememberedUser', JSON.stringify(userData));
-                    }
-                    
-                    // Redirect to dashboard
-                    window.location.href = 'dashboard.html';
-                } catch (error) {
-                    errorDiv.style.display = 'block';
-                    btn.disabled = false;
-                    spinner.style.display = 'none';
-                    btn.innerHTML = 'Sign In';
-                }
-            }, 1500);
+            try {
+                // Set persistence based on remember me
+                const persistence = rememberMe 
+                    ? firebase.auth.Auth.Persistence.LOCAL 
+                    : firebase.auth.Auth.Persistence.SESSION;
+                
+                await auth.setPersistence(persistence);
+                
+                // Sign in with Firebase
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                // Redirect to dashboard
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                errorDiv.textContent = getErrorMessage(error.code);
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btn.innerHTML = 'Sign In';
+            }
         });
 
-        // Load remembered user if available
+        // Get user-friendly error messages
+        function getErrorMessage(errorCode) {
+            const errorMessages = {
+                'auth/invalid-email': 'Invalid email address format.',
+                'auth/user-disabled': 'This account has been disabled.',
+                'auth/user-not-found': 'No account found with this email.',
+                'auth/wrong-password': 'Incorrect password.',
+                'auth/email-already-in-use': 'An account with this email already exists.',
+                'auth/weak-password': 'Password should be at least 6 characters.',
+                'auth/network-request-failed': 'Network error. Please check your connection.',
+                'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+                'auth/invalid-credential': 'Invalid email or password.'
+            };
+            
+            return errorMessages[errorCode] || 'An error occurred. Please try again.';
+        }
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in, redirect to dashboard
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        // Load remembered email if available
         document.addEventListener('DOMContentLoaded', function() {
-            const rememberedUser = localStorage.getItem('rememberedUser');
-            if (rememberedUser) {
-                const userData = JSON.parse(rememberedUser);
-                document.getElementById('username').value = userData.email;
+            const rememberedEmail = localStorage.getItem('rememberedEmail');
+            if (rememberedEmail) {
+                document.getElementById('username').value = rememberedEmail;
                 document.getElementById('remember-me').checked = true;
             }
         });

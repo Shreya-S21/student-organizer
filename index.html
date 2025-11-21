@@ -3,448 +3,421 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Student Organizer</title>
+    <title>Student Organizer - Login</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 50%, #f0f2f5 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 450px;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, #02092c 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .logo {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .tagline {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .login-body {
-            padding: 40px 30px 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #4a5568;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .password-container {
-            position: relative;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #a0aec0;
-            font-size: 18px;
-            padding: 5px;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #667eea;
-        }
-
-        .remember-me label {
-            font-size: 0.9rem;
-            color: #4a5568;
-            cursor: pointer;
-        }
-
-        .signin-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 20px 0;
-        }
-
-        .signin-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .signin-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .signup-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .signup-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
-
-        .error-message {
-            background: #fed7d7;
-            color: #c53030;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border: 1px solid #feb2b2;
-            display: none;
-        }
-
-        .success-message {
-            background: #c6f6d5;
-            color: #2f855a;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border: 1px solid #9ae6b4;
-            display: none;
-        }
-
-        /* Loading Animation */
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(102, 126, 234, 0.3);
-            border-radius: 50%;
-            border-top-color: #667eea;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .login-container {
-                margin: 10px;
-                border-radius: 15px;
-            }
-
-            .login-header {
-                padding: 30px 20px;
-            }
-
-            .login-body {
-                padding: 30px 20px;
-            }
-
-            .logo {
-                font-size: 2rem;
-            }
-
-            .signin-btn {
-                padding: 14px;
-            }
-        }
-
-        /* Accessibility */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .card{background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:100%;max-width:420px;overflow:hidden}
+        .card-header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:30px;text-align:center}
+        .card-header h1{font-size:1.6rem;margin-bottom:5px}
+        .card-header p{opacity:0.8;font-size:0.9rem}
+        .card-body{padding:25px}
+        .status-bar{padding:10px 15px;border-radius:8px;margin-bottom:15px;font-size:0.8rem;text-align:center}
+        .status-loading{background:#fff3cd;color:#856404}
+        .status-connected{background:#d4edda;color:#155724}
+        .status-error{background:#f8d7da;color:#721c24}
+        .tabs{display:flex;margin-bottom:20px;background:#f0f0f0;border-radius:10px;padding:4px}
+        .tabs button{flex:1;padding:12px;border:none;background:none;font-size:0.95rem;font-weight:600;color:#666;cursor:pointer;border-radius:8px;font-family:inherit;transition:0.3s}
+        .tabs button.active{background:#fff;color:#667eea;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .form-box{display:none}
+        .form-box.active{display:block}
+        .input-group{margin-bottom:18px}
+        .input-group label{display:block;margin-bottom:5px;font-weight:500;color:#333;font-size:0.9rem}
+        .input-group input{width:100%;padding:12px 15px;border:2px solid #e0e0e0;border-radius:10px;font-size:1rem;font-family:inherit;transition:0.3s}
+        .input-group input:focus{outline:none;border-color:#667eea}
+        .btn{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;transition:0.3s;margin-top:10px}
+        .btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 20px rgba(102,126,234,0.4)}
+        .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+        .btn-logout{background:#f0f0f0;color:#666;margin-top:10px}
+        .btn-logout:hover:not(:disabled){background:#e0e0e0;box-shadow:none;transform:none}
+        .btn-google{background:#fff;color:#333;border:2px solid #ddd;margin-top:15px;display:flex;align-items:center;justify-content:center;gap:10px}
+        .btn-google:hover:not(:disabled){background:#f5f5f5;transform:none;box-shadow:none}
+        .divider{text-align:center;margin:20px 0;color:#999;font-size:0.85rem;position:relative}
+        .divider::before,.divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#ddd}
+        .divider::before{left:0}
+        .divider::after{right:0}
+        .msg{padding:12px;border-radius:8px;margin-bottom:15px;font-size:0.9rem;display:none}
+        .msg-error{background:#ffe0e0;color:#d32f2f;border:1px solid #ffcdd2}
+        .msg-success{background:#e0ffe0;color:#2e7d32;border:1px solid #c8e6c9}
+        .welcome-box{text-align:center;padding:20px 0}
+        .welcome-box h2{color:#333;margin-bottom:10px}
+        .welcome-box p{color:#666;margin-bottom:5px}
+        .welcome-box .email{font-size:0.85rem;color:#888;margin-bottom:20px}
+        .avatar{width:80px;height:80px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;font-size:2rem;color:#fff}
+        .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-header">
-            <div class="logo"> Student Organizer</div>
-            <p class="tagline">Your personal space for academic growth</p>
+    <div class="card">
+        <div class="card-header">
+            <h1>📚 Student Organizer</h1>
+            <p>AI-Powered Productivity Optimizer</p>
         </div>
+        <div class="card-body">
+            <!-- Status Bar -->
+            <div class="status-bar status-loading" id="statusBar">⏳ Connecting to Firebase...</div>
 
-        <div class="login-body">
-            <form id="login-form">
-                <div class="error-message" id="error-message" role="alert">
-                    Please fill in all fields correctly.
+            <!-- AUTH SECTION -->
+            <div id="authSection">
+                <div class="tabs">
+                    <button id="tabSignin" class="active" onclick="switchTab('signin')">Sign In</button>
+                    <button id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
                 </div>
                 
-                <div class="form-group">
-                    <label for="username">Username or Email</label>
-                    <input type="text" id="username" name="username" required placeholder="Enter your username or email">
-                </div>
+                <div class="msg msg-error" id="errorMsg"></div>
+                <div class="msg msg-success" id="successMsg"></div>
 
-                <div class="form-group password-container">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required placeholder="Enter your password">
-                    <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
-                        👁️
+                <!-- Sign In Form -->
+                <div class="form-box active" id="signinForm">
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password">
+                    </div>
+                    <button class="btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+                    <div class="divider">or</div>
+                    <button class="btn btn-google" id="googleBtn" onclick="handleGoogleLogin()">
+                        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        Continue with Google
                     </button>
                 </div>
 
-                <div class="remember-me">
-                    <input type="checkbox" id="remember-me" name="remember">
-                    <label for="remember-me">Remember me</label>
+                <!-- Sign Up Form -->
+                <div class="form-box" id="signupForm">
+                    <div class="input-group">
+                        <label>Full Name</label>
+                        <input type="text" id="regName" placeholder="Enter your name">
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="regEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="regPassword" placeholder="Min 6 characters">
+                    </div>
+                    <div class="input-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="regConfirm" placeholder="Confirm password">
+                    </div>
+                    <button class="btn" id="registerBtn" onclick="handleRegister()">Create Account</button>
+                    <div class="divider">or</div>
+                    <button class="btn btn-google" onclick="handleGoogleLogin()">
+                        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        Sign up with Google
+                    </button>
                 </div>
+            </div>
 
-                <button type="submit" class="signin-btn" id="signin-btn">
-                    <span class="loading-spinner" id="loading-spinner" style="display: none;"></span>
-                    Sign In
-                </button>
-
-                <div class="signup-link">
-                    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign up here</a></p>
+            <!-- WELCOME SECTION -->
+            <div id="welcomeSection" style="display:none">
+                <div class="welcome-box">
+                    <div class="avatar" id="userAvatar">👤</div>
+                    <h2 id="welcomeName">Welcome!</h2>
+                    <p class="email" id="welcomeEmail">user@email.com</p>
+                    <button class="btn" onclick="goToDashboard()">Go to Dashboard</button>
+                    <button class="btn btn-logout" onclick="handleLogout()">Log Out</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
-            authDomain: "student-organizer-53420.firebaseapp.com",
-            projectId: "student-organizer-53420",
-            storageBucket: "student-organizer-53420.firebasestorage.app",
-            messagingSenderId: "481845921136",
-            appId: "1:481845921136:web:10ce801027f42b2311bbb5",
-            measurementId: "G-7365W6G880"
-        };
+    // =============================================
+    // FIREBASE CONFIGURATION
+    // =============================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
+        authDomain: "student-organizer-53420.firebaseapp.com",
+        projectId: "student-organizer-53420",
+        storageBucket: "student-organizer-53420.firebasestorage.app",
+        messagingSenderId: "481845921136",
+        appId: "1:481845921136:web:10ce801027f42b2311bbb5",
+        measurementId: "G-7365W6G880"
+    };
 
-        // Initialize Firebase
+    // Initialize Firebase
+    let auth, db, googleProvider;
+    let firebaseReady = false;
+
+    try {
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        auth = firebase.auth();
+        db = firebase.firestore();
+        googleProvider = new firebase.auth.GoogleAuthProvider();
+        
+        // Set persistence to LOCAL - stays logged in after browser close
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => {
+                firebaseReady = true;
+                updateStatus('connected', '✅ Firebase Connected');
+            })
+            .catch((error) => {
+                console.error('Persistence error:', error);
+                updateStatus('error', '⚠️ ' + error.message);
+            });
+    } catch (error) {
+        console.error('Firebase init error:', error);
+        updateStatus('error', '❌ Firebase Error: ' + error.message);
+    }
 
-        // Enable persistence
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    // =============================================
+    // UTILITY FUNCTIONS
+    // =============================================
+    function updateStatus(type, message) {
+        const bar = document.getElementById('statusBar');
+        bar.className = 'status-bar status-' + type;
+        bar.textContent = message;
+    }
 
-        // Toggle password visibility
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleBtn = document.querySelector('.password-toggle');
+    function showError(msg) {
+        document.getElementById('errorMsg').textContent = msg;
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('successMsg').style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+        document.getElementById('successMsg').textContent = msg;
+        document.getElementById('successMsg').style.display = 'block';
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    function hideMessages() {
+        document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'none';
+    }
+
+    function switchTab(tab) {
+        hideMessages();
+        document.getElementById('tabSignin').classList.toggle('active', tab === 'signin');
+        document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
+        document.getElementById('signinForm').classList.toggle('active', tab === 'signin');
+        document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
+    }
+
+    function setButtonLoading(btnId, loading, text) {
+        const btn = document.getElementById(btnId);
+        btn.disabled = loading;
+        btn.textContent = text;
+    }
+
+    function getErrorMessage(code) {
+        const errors = {
+            'auth/invalid-email': 'Invalid email address.',
+            'auth/user-disabled': 'This account has been disabled.',
+            'auth/user-not-found': 'No account found. Please sign up first.',
+            'auth/wrong-password': 'Incorrect password.',
+            'auth/email-already-in-use': 'Email already registered. Please sign in.',
+            'auth/weak-password': 'Password must be at least 6 characters.',
+            'auth/invalid-credential': 'Invalid email or password.',
+            'auth/too-many-requests': 'Too many attempts. Please try later.',
+            'auth/network-request-failed': 'Network error. Check your connection.',
+            'auth/popup-closed-by-user': 'Sign-in popup was closed.',
+            'auth/operation-not-allowed': 'This sign-in method is not enabled.'
+        };
+        return errors[code] || 'Error: ' + code;
+    }
+
+    function showAuthSection() {
+        document.getElementById('authSection').style.display = 'block';
+        document.getElementById('welcomeSection').style.display = 'none';
+    }
+
+    function showWelcomeSection(user) {
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('welcomeSection').style.display = 'block';
+        
+        const name = user.displayName || 'User';
+        document.getElementById('welcomeName').textContent = 'Welcome, ' + name + '!';
+        document.getElementById('welcomeEmail').textContent = user.email;
+        
+        // Show profile photo if available
+        const avatar = document.getElementById('userAvatar');
+        if (user.photoURL) {
+            avatar.innerHTML = '<img src="' + user.photoURL + '" alt="Profile">';
+        } else {
+            avatar.innerHTML = '👤';
+        }
+    }
+
+    // =============================================
+    // SIGN UP WITH EMAIL/PASSWORD
+    // =============================================
+    async function handleRegister() {
+        hideMessages();
+
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirm = document.getElementById('regConfirm').value;
+
+        // Validation
+        if (!name || !email || !password || !confirm) {
+            showError('Please fill in all fields.');
+            return;
+        }
+        if (password.length < 6) {
+            showError('Password must be at least 6 characters.');
+            return;
+        }
+        if (password !== confirm) {
+            showError('Passwords do not match.');
+            return;
+        }
+
+        setButtonLoading('registerBtn', true, 'Creating Account...');
+
+        try {
+            // Create user in Firebase Auth
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleBtn.innerHTML = '🙈';
-                toggleBtn.setAttribute('aria-label', 'Hide password');
+            // Update profile with name
+            await userCredential.user.updateProfile({ displayName: name });
+
+            // Save additional user data to Firestore
+            await db.collection('users').doc(userCredential.user.uid).set({
+                name: name,
+                email: email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showSuccess('🎉 Account created successfully!');
+            
+            // Clear form
+            document.getElementById('regName').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regConfirm').value = '';
+
+        } catch (error) {
+            console.error('Register error:', error);
+            showError(getErrorMessage(error.code));
+            setButtonLoading('registerBtn', false, 'Create Account');
+        }
+    }
+
+    // =============================================
+    // SIGN IN WITH EMAIL/PASSWORD
+    // =============================================
+    async function handleLogin() {
+        hideMessages();
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+            showError('Please fill in all fields.');
+            return;
+        }
+
+        setButtonLoading('loginBtn', true, 'Signing In...');
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            showSuccess('✅ Login successful!');
+            
+            // Clear form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+
+        } catch (error) {
+            console.error('Login error:', error);
+            showError(getErrorMessage(error.code));
+            setButtonLoading('loginBtn', false, 'Sign In');
+        }
+    }
+
+    // =============================================
+    // GOOGLE SIGN IN
+    // =============================================
+    async function handleGoogleLogin() {
+        hideMessages();
+        
+        try {
+            const result = await auth.signInWithPopup(googleProvider);
+            const user = result.user;
+            
+            // Check if new user, save to Firestore
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (!userDoc.exists) {
+                await db.collection('users').doc(user.uid).set({
+                    name: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            showSuccess('✅ Google sign-in successful!');
+
+        } catch (error) {
+            console.error('Google login error:', error);
+            if (error.code !== 'auth/popup-closed-by-user') {
+                showError(getErrorMessage(error.code));
+            }
+        }
+    }
+
+    // =============================================
+    // LOG OUT
+    // =============================================
+    async function handleLogout() {
+        try {
+            await auth.signOut();
+            showAuthSection();
+            hideMessages();
+            showSuccess('You have been logged out.');
+        } catch (error) {
+            console.error('Logout error:', error);
+            showError('Error logging out.');
+        }
+    }
+
+    // =============================================
+    // GO TO DASHBOARD
+    // =============================================
+    function goToDashboard() {
+        window.location.href = 'dashboard.html';
+    }
+
+    // =============================================
+    // AUTH STATE LISTENER - AUTO LOGIN CHECK
+    // =============================================
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // User is signed in
+            console.log('User logged in:', user.email);
+            showWelcomeSection(user);
+            setButtonLoading('loginBtn', false, 'Sign In');
+            setButtonLoading('registerBtn', false, 'Create Account');
+        } else {
+            // User is signed out
+            console.log('No user logged in');
+            showAuthSection();
+        }
+    });
+
+    // Enter key support
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const signinActive = document.getElementById('signinForm').classList.contains('active');
+            if (signinActive) {
+                handleLogin();
             } else {
-                passwordInput.type = 'password';
-                toggleBtn.innerHTML = '👁️';
-                toggleBtn.setAttribute('aria-label', 'Show password');
+                handleRegister();
             }
         }
-
-        // Show signup modal
-        function showSignup() {
-            const email = document.getElementById('username').value;
-            if (email && email.includes('@')) {
-                const response = confirm(`Create account for ${email}?`);
-                if (response) {
-                    const password = prompt('Enter a password (min 6 characters):');
-                    if (password && password.length >= 6) {
-                        createAccount(email, password);
-                    } else {
-                        alert('Password must be at least 6 characters long.');
-                    }
-                }
-            } else {
-                alert('Please enter a valid email address to sign up.');
-            }
-        }
-
-        // Create new account
-        async function createAccount(email, password) {
-            const btn = document.getElementById('signin-btn');
-            const spinner = document.getElementById('loading-spinner');
-            const errorDiv = document.getElementById('error-message');
-            
-            btn.disabled = true;
-            spinner.style.display = 'inline-block';
-            
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                alert('Account created successfully! Welcome to Student Organizer.');
-                window.location.href = 'dashboard.html';
-            } catch (error) {
-                errorDiv.textContent = getErrorMessage(error.code);
-                errorDiv.style.display = 'block';
-                btn.disabled = false;
-                spinner.style.display = 'none';
-            }
-        }
-
-        // Form submission handler
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const rememberMe = document.getElementById('remember-me').checked;
-            const btn = document.getElementById('signin-btn');
-            const spinner = document.getElementById('loading-spinner');
-            const errorDiv = document.getElementById('error-message');
-            
-            // Reset previous states
-            errorDiv.style.display = 'none';
-            btn.disabled = true;
-            spinner.style.display = 'inline-block';
-            btn.innerHTML = '<span class="loading-spinner"></span>Signing In...';
-            
-            // Validation
-            if (!email || !password) {
-                errorDiv.textContent = 'Please fill in all fields correctly.';
-                errorDiv.style.display = 'block';
-                btn.disabled = false;
-                spinner.style.display = 'none';
-                btn.innerHTML = 'Sign In';
-                return;
-            }
-            
-            try {
-                // Set persistence based on remember me
-                const persistence = rememberMe 
-                    ? firebase.auth.Auth.Persistence.LOCAL 
-                    : firebase.auth.Auth.Persistence.SESSION;
-                
-                await auth.setPersistence(persistence);
-                
-                // Sign in with Firebase
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                
-                // Redirect to dashboard
-                window.location.href = 'dashboard.html';
-            } catch (error) {
-                errorDiv.textContent = getErrorMessage(error.code);
-                errorDiv.style.display = 'block';
-                btn.disabled = false;
-                spinner.style.display = 'none';
-                btn.innerHTML = 'Sign In';
-            }
-        });
-
-        // Get user-friendly error messages
-        function getErrorMessage(errorCode) {
-            const errorMessages = {
-                'auth/invalid-email': 'Invalid email address format.',
-                'auth/user-disabled': 'This account has been disabled.',
-                'auth/user-not-found': 'No account found with this email.',
-                'auth/wrong-password': 'Incorrect password.',
-                'auth/email-already-in-use': 'An account with this email already exists.',
-                'auth/weak-password': 'Password should be at least 6 characters.',
-                'auth/network-request-failed': 'Network error. Please check your connection.',
-                'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
-                'auth/invalid-credential': 'Invalid email or password.'
-            };
-            
-            return errorMessages[errorCode] || 'An error occurred. Please try again.';
-        }
-
-        // Check if user is already logged in
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // User is signed in, redirect to dashboard
-                window.location.href = 'dashboard.html';
-            }
-        });
-
-        // Load remembered email if available
-        document.addEventListener('DOMContentLoaded', function() {
-            const rememberedEmail = localStorage.getItem('rememberedEmail');
-            if (rememberedEmail) {
-                document.getElementById('username').value = rememberedEmail;
-                document.getElementById('remember-me').checked = true;
-            }
-        });
+    });
     </script>
-
 </body>
 <link rel="stylesheet" href="y2k-style.css">
 </html>

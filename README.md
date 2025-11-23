@@ -4,7 +4,7 @@ An intelligent system that helps students optimize their daily routines, track p
 
 
                                                                                                                      
-                                                                                                                    view demo video here
+  view demo video here
 
 
 https://github.com/Shreya-S21/student-organizer/blob/main/freecompress-student_organizer.mp4

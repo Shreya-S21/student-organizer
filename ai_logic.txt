@@ -1,0 +1,331 @@
+# 🤖 AI Logic Documentation
+
+## AI-Based Student Productivity & Routine Optimizer
+
+---
+
+## 1. Overview
+
+The AI Recommendation Engine analyzes student behavior patterns, study habits, and productivity data to provide personalized suggestions for optimal routine management.
+
+---
+
+## 2. Core AI Components
+
+### 2.1 Productivity Scoring Algorithm
+
+```javascript
+function calculateProductivityScore(userData) {
+    const weights = {
+        taskCompletion: 0.30,
+        studyHours: 0.25,
+        consistencyStreak: 0.20,
+        sleepQuality: 0.15,
+        breakAdherence: 0.10
+    };
+    
+    let score = 0;
+    score += (userData.completedTasks / userData.totalTasks) * weights.taskCompletion * 100;
+    score += (userData.actualStudyHours / userData.goalStudyHours) * weights.studyHours * 100;
+    score += Math.min(userData.currentStreak / 7, 1) * weights.consistencyStreak * 100;
+    score += (userData.sleepHours >= 7 ? 1 : userData.sleepHours / 7) * weights.sleepQuality * 100;
+    score += userData.breaksTaken * weights.breakAdherence * 10;
+    
+    return Math.min(Math.round(score), 100);
+}
+```
+
+### 2.2 Time-of-Day Productivity Analysis
+
+```javascript
+function analyzeProductiveHours(routineLogs) {
+    const hourlyProductivity = Array(24).fill(0);
+    const hourlyCount = Array(24).fill(0);
+    
+    routineLogs.forEach(log => {
+        const hour = new Date(log.timestamp).getHours();
+        hourlyProductivity[hour] += log.focusScore;
+        hourlyCount[hour]++;
+    });
+    
+    const avgProductivity = hourlyProductivity.map((total, i) => 
+        hourlyCount[i] > 0 ? total / hourlyCount[i] : 0
+    );
+    
+    // Find peak hours (top 3)
+    const peakHours = avgProductivity
+        .map((score, hour) => ({ hour, score }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map(item => item.hour);
+    
+    return {
+        peakHours,
+        lowHours: avgProductivity
+            .map((score, hour) => ({ hour, score }))
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 3)
+            .map(item => item.hour),
+        avgProductivity
+    };
+}
+```
+
+### 2.3 Pattern Detection Engine
+
+```javascript
+function detectPatterns(userData, routineLogs) {
+    const patterns = {
+        sleepImpact: analyzeSleepProductivityCorrelation(routineLogs),
+        bestStudyTime: findOptimalStudyTime(routineLogs),
+        taskCompletionRate: calculateCompletionTrends(userData),
+        focusPatterns: analyzeFocusDuration(routineLogs)
+    };
+    
+    return patterns;
+}
+
+function analyzeSleepProductivityCorrelation(logs) {
+    const data = logs.map(log => ({
+        sleep: log.sleepHours,
+        productivity: log.productivityScore
+    }));
+    
+    // Calculate correlation coefficient
+    const correlation = calculateCorrelation(
+        data.map(d => d.sleep),
+        data.map(d => d.productivity)
+    );
+    
+    return {
+        correlation,
+        recommendation: correlation > 0.5 
+            ? "Strong positive correlation: More sleep = Better productivity"
+            : "Sleep pattern needs improvement"
+    };
+}
+```
+
+---
+
+## 3. Recommendation Generation
+
+### 3.1 Rule-Based Recommendations
+
+```javascript
+const recommendationRules = [
+    {
+        condition: (data) => data.avgSleepHours < 6,
+        priority: 'high',
+        message: "⚠️ Low sleep detected. Your performance drops by {X}% on days with less than 6 hours sleep.",
+        action: "sleepReminder"
+    },
+    {
+        condition: (data) => data.peakHours.includes(getCurrentHour()),
+        priority: 'medium',
+        message: "🎯 This is your peak productivity hour! Schedule important tasks now.",
+        action: "taskSuggestion"
+    },
+    {
+        condition: (data) => data.consecutiveStudyHours > 2,
+        priority: 'high',
+        message: "⏰ You've been studying for 2+ hours. Take a 15-min break to maintain focus.",
+        action: "breakReminder"
+    },
+    {
+        condition: (data) => data.pendingHighPriorityTasks > 0 && data.hoursUntilDeadline < 4,
+        priority: 'urgent',
+        message: "🔴 High-priority task deadline in {X} hours!",
+        action: "urgentAlert"
+    }
+];
+
+function generateRecommendations(userData) {
+    const recommendations = [];
+    
+    recommendationRules.forEach(rule => {
+        if (rule.condition(userData)) {
+            recommendations.push({
+                priority: rule.priority,
+                message: formatMessage(rule.message, userData),
+                action: rule.action,
+                timestamp: new Date()
+            });
+        }
+    });
+    
+    return recommendations.sort((a, b) => 
+        priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
+}
+```
+
+### 3.2 Smart Scheduling Suggestions
+
+```javascript
+function suggestOptimalSchedule(tasks, userPatterns) {
+    const schedule = [];
+    const availableSlots = generateTimeSlots(userPatterns.wakeTime, userPatterns.sleepTime);
+    
+    // Sort tasks by priority and deadline
+    const sortedTasks = tasks.sort((a, b) => {
+        if (a.priority !== b.priority) return b.priority - a.priority;
+        return new Date(a.deadline) - new Date(b.deadline);
+    });
+    
+    sortedTasks.forEach(task => {
+        // Find best slot based on task type and user patterns
+        const bestSlot = findBestSlot(task, availableSlots, userPatterns);
+        
+        if (bestSlot) {
+            schedule.push({
+                task: task,
+                suggestedTime: bestSlot.start,
+                reason: generateReason(task, bestSlot, userPatterns)
+            });
+            markSlotUsed(availableSlots, bestSlot);
+        }
+    });
+    
+    return schedule;
+}
+
+function findBestSlot(task, slots, patterns) {
+    // Match task category with optimal time
+    const categoryTimeMap = {
+        'study': patterns.peakHours,
+        'exercise': ['06', '07', '17', '18'],
+        'personal': patterns.lowHours,
+        'health': ['07', '12', '19']
+    };
+    
+    const preferredHours = categoryTimeMap[task.category] || patterns.peakHours;
+    
+    return slots.find(slot => 
+        preferredHours.includes(slot.hour) && 
+        slot.duration >= task.estimatedDuration &&
+        !slot.isUsed
+    );
+}
+```
+
+---
+
+## 4. Prediction Models
+
+### 4.1 Task Completion Prediction
+
+```javascript
+function predictTaskCompletion(task, userData) {
+    const factors = {
+        historicalCompletion: userData.stats.taskCompletionRate,
+        taskDifficulty: task.difficulty || 'medium',
+        timeAvailable: calculateAvailableTime(task.deadline),
+        currentWorkload: userData.pendingTasks.length,
+        energyLevel: predictEnergyLevel(userData.routineLogs)
+    };
+    
+    const weights = {
+        historicalCompletion: 0.35,
+        taskDifficulty: 0.20,
+        timeAvailable: 0.20,
+        currentWorkload: 0.15,
+        energyLevel: 0.10
+    };
+    
+    let probability = 0;
+    probability += factors.historicalCompletion * weights.historicalCompletion;
+    probability += difficultyScore(factors.taskDifficulty) * weights.taskDifficulty;
+    probability += timeScore(factors.timeAvailable, task.estimatedDuration) * weights.timeAvailable;
+    probability += workloadScore(factors.currentWorkload) * weights.currentWorkload;
+    probability += factors.energyLevel * weights.energyLevel;
+    
+    return {
+        probability: Math.round(probability * 100),
+        confidence: calculateConfidence(userData.routineLogs.length),
+        suggestions: generateImprovementSuggestions(factors)
+    };
+}
+```
+
+### 4.2 Productivity Forecast
+
+```javascript
+function forecastProductivity(userData, targetDate) {
+    const dayOfWeek = targetDate.getDay();
+    const historicalData = filterByDayOfWeek(userData.routineLogs, dayOfWeek);
+    
+    if (historicalData.length < 3) {
+        return { forecast: null, message: "Need more data for accurate prediction" };
+    }
+    
+    // Simple moving average prediction
+    const recentScores = historicalData.slice(-5).map(d => d.productivityScore);
+    const avgScore = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
+    
+    // Adjust for trends
+    const trend = calculateTrend(recentScores);
+    const forecast = Math.min(100, Math.max(0, avgScore + trend));
+    
+    return {
+        forecast: Math.round(forecast),
+        trend: trend > 0 ? 'improving' : trend < 0 ? 'declining' : 'stable',
+        confidence: Math.min(95, historicalData.length * 10)
+    };
+}
+```
+
+---
+
+## 5. Example AI Recommendations Output
+
+```json
+{
+    "userId": "user123",
+    "generatedAt": "2025-01-15T10:30:00Z",
+    "recommendations": [
+        {
+            "type": "study_time",
+            "priority": "high",
+            "message": "Your focus is highest between 7-9 PM. Schedule Math practice here.",
+            "action": "schedule_task",
+            "data": { "suggestedTime": "19:00", "duration": 120 }
+        },
+        {
+            "type": "avoid_time",
+            "priority": "medium",
+            "message": "Avoid study between 3-4 PM due to low productivity patterns.",
+            "action": "block_time",
+            "data": { "blockTime": "15:00", "duration": 60 }
+        },
+        {
+            "type": "sleep_alert",
+            "priority": "high",
+            "message": "Sleep earlier; performance drops 23% on 6-hr sleep days.",
+            "action": "sleep_reminder",
+            "data": { "suggestedBedtime": "22:30" }
+        },
+        {
+            "type": "break_reminder",
+            "priority": "medium",
+            "message": "A free 1-hour slot available now — recommended study time.",
+            "action": "suggest_activity",
+            "data": { "freeSlot": "14:00-15:00" }
+        }
+    ],
+    "productivityScore": 78,
+    "trend": "improving"
+}
+```
+
+---
+
+## 6. Integration Points
+
+| Component | Input | Output |
+|-----------|-------|--------|
+| Routine Logger | User activity logs | Processed time data |
+| Task Manager | Task list, deadlines | Priority sorted tasks |
+| Analytics Engine | Historical data | Patterns, trends |
+| Notification System | Recommendations | Push alerts |
+| Dashboard | All outputs | Visual analytics |

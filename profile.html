@@ -139,6 +139,13 @@
             margin: 0 auto 20px;
         }
 
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
         .profile-name {
             font-size: 2rem;
             color: #2c3e50;
@@ -233,6 +240,11 @@
 
         .btn:hover {
             background: #2980b9;
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
         }
 
         .btn-success {
@@ -485,15 +497,46 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
-        // Global variables
-        let currentUser = {};
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
+            authDomain: "student-organizer-53420.firebaseapp.com",
+            projectId: "student-organizer-53420",
+            storageBucket: "student-organizer-53420.firebasestorage.app",
+            messagingSenderId: "481845921136",
+            appId: "1:481845921136:web:10ce801027f42b2311bbb5",
+            measurementId: "G-7365W6G880"
+        };
+
+        let auth, db;
+        let currentUser = null;
         let isLoading = false;
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (error) {
+            console.error('Firebase init error:', error);
+        }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserData();
-            loadProfileData();
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    loadProfileData();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
             setupEventListeners();
         });
 
@@ -509,60 +552,97 @@
         }
 
         // Logout function
-        function logout() {
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.clear();
-                window.location.href = 'index.html';
+                try {
+                    await auth.signOut();
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('Error logging out. Please try again.');
+                }
             }
         }
 
-        // Load user data from localStorage
-        function loadUserData() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-            }
-        }
+        // Load profile data from Firebase
+        async function loadProfileData() {
+            if (!currentUser) return;
 
-        // Load profile data
-        function loadProfileData() {
-            // Load saved profile data
-            const profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-            const preferences = JSON.parse(localStorage.getItem('userPreferences') || '{}');
-            
-            // Load personal information
-            document.getElementById('first-name').value = profile.firstName || '';
-            document.getElementById('last-name').value = profile.lastName || '';
-            document.getElementById('email').value = profile.email || currentUser.email || '';
-            document.getElementById('phone').value = profile.phone || '';
-            document.getElementById('university').value = profile.university || '';
-            document.getElementById('course').value = profile.course || '';
-            document.getElementById('year').value = profile.year || 'Freshman';
-            
-            // Load study preferences
-            document.getElementById('study-time').value = preferences.studyTime || 'Morning (8-12 PM)';
-            document.getElementById('study-goal').value = preferences.studyGoal || '6';
-            document.getElementById('sleep-goal').value = preferences.sleepGoal || '8';
-            document.getElementById('break-frequency').value = preferences.breakFrequency || 'Every 50 minutes';
-            document.getElementById('study-environment').value = preferences.studyEnvironment || 'Quiet Library';
-            
-            // Update display elements
-            updateDisplayInfo(profile);
+            try {
+                // Get user document from Firestore
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // Split name into first and last name
+                    const nameParts = (userData.name || currentUser.displayName || '').split(' ');
+                    const firstName = nameParts[0] || '';
+                    const lastName = nameParts.slice(1).join(' ') || '';
+                    
+                    // Load personal information
+                    document.getElementById('first-name').value = userData.firstName || firstName;
+                    document.getElementById('last-name').value = userData.lastName || lastName;
+                    document.getElementById('email').value = userData.email || currentUser.email;
+                    document.getElementById('phone').value = userData.phone || '';
+                    document.getElementById('university').value = userData.university || '';
+                    document.getElementById('course').value = userData.course || '';
+                    document.getElementById('year').value = userData.year || 'Freshman';
+                    
+                    // Load study preferences
+                    document.getElementById('study-time').value = userData.studyTime || 'Morning (8-12 PM)';
+                    document.getElementById('study-goal').value = userData.studyGoal || '6';
+                    document.getElementById('sleep-goal').value = userData.sleepGoal || '8';
+                    document.getElementById('break-frequency').value = userData.breakFrequency || 'Every 50 minutes';
+                    document.getElementById('study-environment').value = userData.studyEnvironment || 'Quiet Library';
+                    
+                    // Update display elements
+                    updateDisplayInfo(userData);
+                } else {
+                    // User document doesn't exist, use Firebase Auth data
+                    const nameParts = (currentUser.displayName || '').split(' ');
+                    document.getElementById('first-name').value = nameParts[0] || '';
+                    document.getElementById('last-name').value = nameParts.slice(1).join(' ') || '';
+                    document.getElementById('email').value = currentUser.email || '';
+                    
+                    updateDisplayInfo({
+                        name: currentUser.displayName,
+                        email: currentUser.email
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showNotification('Error loading profile data', 'error');
+            }
         }
 
         // Update display information
-        function updateDisplayInfo(profile) {
-            const firstName = profile.firstName || currentUser.name || 'Student';
-            const lastName = profile.lastName || '';
+        function updateDisplayInfo(userData) {
+            const firstName = userData.firstName || userData.name?.split(' ')[0] || currentUser?.displayName?.split(' ')[0] || 'Student';
+            const lastName = userData.lastName || userData.name?.split(' ').slice(1).join(' ') || '';
             
             // Update header elements
             document.getElementById('profile-name').textContent = `${firstName} ${lastName}`.trim();
-            document.getElementById('profile-email').textContent = profile.email || currentUser.email || 'student@example.com';
-            document.getElementById('profile-avatar').textContent = (firstName.charAt(0) || 'S').toUpperCase();
+            document.getElementById('profile-email').textContent = userData.email || currentUser?.email || 'student@example.com';
+            
+            // Update avatar
+            const avatar = document.getElementById('profile-avatar');
+            if (currentUser?.photoURL) {
+                avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="Profile">`;
+            } else {
+                avatar.textContent = (firstName.charAt(0) || 'S').toUpperCase();
+            }
             
             // Update member since date
-            const memberSince = localStorage.getItem('memberSince') || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            document.getElementById('member-since').textContent = memberSince;
+            if (userData.createdAt) {
+                const createdDate = userData.createdAt.toDate();
+                const memberSince = createdDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                document.getElementById('member-since').textContent = memberSince;
+            } else if (currentUser?.metadata?.creationTime) {
+                const createdDate = new Date(currentUser.metadata.creationTime);
+                const memberSince = createdDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                document.getElementById('member-since').textContent = memberSince;
+            }
         }
 
         // Setup event listeners
@@ -579,15 +659,12 @@
                 preferencesForm.addEventListener('submit', handlePreferencesFormSubmit);
             }
             
-            // Form input real-time updates
-            setupRealTimeUpdates();
-            
             // Overlay click to close sidebar
             document.getElementById('overlay').addEventListener('click', toggleMenu);
         }
 
         // Handle personal information form submission
-        function handlePersonalFormSubmit(e) {
+        async function handlePersonalFormSubmit(e) {
             e.preventDefault();
             
             if (isLoading) return;
@@ -614,37 +691,38 @@
                 return;
             }
             
-            // Simulate save delay
-            setTimeout(() => {
-                try {
-                    // Save to localStorage
-                    localStorage.setItem('userProfile', JSON.stringify(profile));
-                    
-                    // Update currentUser if needed
-                    if (currentUser.name === 'Student' || !currentUser.name) {
-                        currentUser.name = profile.firstName;
-                        currentUser.email = profile.email;
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    }
-                    
-                    // Update display
-                    updateDisplayInfo(profile);
-                    
-                    // Show success message
-                    showSuccessMessage('personal-form', 'Personal information saved successfully!');
-                    showNotification('Profile updated successfully!', 'success');
-                    
-                } catch (error) {
-                    showNotification('Error saving profile. Please try again.', 'error');
-                } finally {
-                    hideLoadingState('personal-form');
-                    isLoading = false;
-                }
-            }, 800);
+            try {
+                // Save to Firestore
+                await db.collection('users').doc(currentUser.uid).set({
+                    firstName: profile.firstName,
+                    lastName: profile.lastName,
+                    name: `${profile.firstName} ${profile.lastName}`.trim(),
+                    email: profile.email,
+                    phone: profile.phone,
+                    university: profile.university,
+                    course: profile.course,
+                    year: profile.year,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                // Update display
+                updateDisplayInfo(profile);
+                
+                // Show success message
+                showSuccessMessage('personal-form', 'Personal information saved successfully!');
+                showNotification('Profile updated successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showNotification('Error saving profile. Please try again.', 'error');
+            } finally {
+                hideLoadingState('personal-form');
+                isLoading = false;
+            }
         }
 
         // Handle preferences form submission
-        function handlePreferencesFormSubmit(e) {
+        async function handlePreferencesFormSubmit(e) {
             e.preventDefault();
             
             if (isLoading) return;
@@ -676,46 +754,28 @@
                 return;
             }
             
-            // Simulate save delay
-            setTimeout(() => {
-                try {
-                    // Save preferences
-                    localStorage.setItem('userPreferences', JSON.stringify(preferences));
-                    
-                    // Also save individual goals for dashboard integration
-                    localStorage.setItem('study-goal', preferences.studyGoal);
-                    localStorage.setItem('sleep-goal', preferences.sleepGoal);
-                    
-                    // Show success message
-                    showSuccessMessage('preferences-form', 'Preferences saved successfully!');
-                    showNotification('Preferences updated successfully!', 'success');
-                    
-                } catch (error) {
-                    showNotification('Error saving preferences. Please try again.', 'error');
-                } finally {
-                    hideLoadingState('preferences-form');
-                    isLoading = false;
-                }
-            }, 800);
-        }
-
-        // Setup real-time updates for form inputs
-        function setupRealTimeUpdates() {
-            // Auto-save on blur for personal info
-            const personalInputs = ['first-name', 'last-name', 'email', 'phone', 'university', 'course'];
-            personalInputs.forEach(inputId => {
-                const input = document.getElementById(inputId);
-                if (input) {
-                    input.addEventListener('blur', function() {
-                        if (this.value.trim()) {
-                            // Show preview of name change
-                            const profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-                            profile[this.name] = this.value.trim();
-                            updateDisplayInfo(profile);
-                        }
-                    });
-                }
-            });
+            try {
+                // Save preferences to Firestore
+                await db.collection('users').doc(currentUser.uid).set({
+                    studyTime: preferences.studyTime,
+                    studyGoal: preferences.studyGoal,
+                    sleepGoal: preferences.sleepGoal,
+                    breakFrequency: preferences.breakFrequency,
+                    studyEnvironment: preferences.studyEnvironment,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                // Show success message
+                showSuccessMessage('preferences-form', 'Preferences saved successfully!');
+                showNotification('Preferences updated successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error saving preferences:', error);
+                showNotification('Error saving preferences. Please try again.', 'error');
+            } finally {
+                hideLoadingState('preferences-form');
+                isLoading = false;
+            }
         }
 
         // Show loading state
@@ -797,15 +857,6 @@
                 const sidebar = document.getElementById('sidebar');
                 if (sidebar.classList.contains('active')) {
                     toggleMenu();
-                }
-            }
-            
-            // Ctrl+S saves current form
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                const activeForm = document.activeElement.closest('form');
-                if (activeForm) {
-                    activeForm.dispatchEvent(new Event('submit'));
                 }
             }
         });

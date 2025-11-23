@@ -82,7 +82,6 @@
         .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
         .status-badge.active { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
         .status-badge.learning { background: rgba(52, 152, 219, 0.1); color: #3498db; }
-        .status-badge.pending { background: rgba(241, 196, 15, 0.1); color: #f1c40f; }
 
         /* Recommendations */
         .recommendations-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
@@ -103,16 +102,17 @@
         .chat-header { background: #3498db; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .chat-title { font-size: 1.2rem; font-weight: 600; }
         .chat-messages { max-height: 400px; overflow-y: auto; padding: 20px; background: #f8f9fa; }
-        .message { margin-bottom: 15px; display: flex; align-items: flex-start; gap: 10px; }
+        .message { margin-bottom: 15px; display: flex; align-items: flex-start; gap: 10px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .message.user { flex-direction: row-reverse; }
-        .message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; }
+        .message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; flex-shrink: 0; }
         .message-avatar.ai { background: #3498db; color: white; }
         .message-avatar.user { background: #2c3e50; color: white; }
         .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 18px; line-height: 1.4; }
         .message.user .message-bubble { background: #3498db; color: white; border-radius: 18px 18px 0 18px; }
         .message.ai .message-bubble { background: white; border: 1px solid #ecf0f1; color: #2c3e50; border-radius: 18px 18px 18px 0; }
         .chat-input { padding: 20px; background: white; border-top: 1px solid #ecf0f1; display: flex; gap: 10px; }
-        .chat-input input { flex: 1; padding: 12px 16px; border: 2px solid #ecf0f1; border-radius: 25px; outline: none; }
+        .chat-input input { flex: 1; padding: 12px 16px; border: 2px solid #ecf0f1; border-radius: 25px; outline: none; font-family: inherit; }
         .chat-input input:focus { border-color: #3498db; }
         .chat-send { padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 500; }
         .chat-send:hover { background: #2980b9; }
@@ -130,6 +130,7 @@
             .main-content.shifted { margin-left: 0; }
             .banner-stats { flex-direction: column; }
             .features-grid { grid-template-columns: 1fr; }
+            .message-bubble { max-width: 85%; }
         }
     </style>
 </head>
@@ -384,7 +385,6 @@
             if (!currentUser) return;
 
             try {
-                // Calculate days learning
                 const aiSettingsRef = db.collection('users').doc(currentUser.uid).collection('aiSettings').doc('config');
                 const aiDoc = await aiSettingsRef.get();
                 
@@ -394,7 +394,6 @@
                     const now = new Date();
                     daysLearning = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
                 } else {
-                    // Initialize AI settings
                     await aiSettingsRef.set({
                         startDate: firebase.firestore.FieldValue.serverTimestamp(),
                         active: true,
@@ -403,14 +402,11 @@
                     });
                 }
 
-                // Get patterns and recommendations count
                 const analytics = await analyzeUserPatterns();
                 
                 document.getElementById('days-learning').textContent = daysLearning;
                 document.getElementById('patterns-found').textContent = analytics.patternsFound;
                 document.getElementById('recommendations-given').textContent = analytics.recommendationsGiven;
-                
-                // Update other stats
                 document.getElementById('ai-accuracy').textContent = analytics.accuracy + '%';
                 document.getElementById('applied-suggestions').textContent = analytics.appliedSuggestions;
                 document.getElementById('productivity-gain').textContent = '+' + analytics.productivityGain + '%';
@@ -431,7 +427,6 @@
             let patternsFound = 0;
 
             try {
-                // Analyze last 7 days
                 for (let i = 0; i < 7; i++) {
                     const date = new Date();
                     date.setDate(date.getDate() - i);
@@ -455,22 +450,19 @@
                     }
                 }
 
-                // Calculate patterns
                 const avgStudy = studyDays > 0 ? totalStudy / studyDays : 0;
                 const avgSleep = sleepDays > 0 ? totalSleep / sleepDays : 0;
                 
-                // Count patterns found
                 if (studyDays >= 3) patternsFound++;
                 if (sleepDays >= 3) patternsFound++;
                 if (avgStudy > 4) patternsFound++;
                 if (avgSleep >= 7) patternsFound++;
 
-                // Calculate wellness score
                 const wellnessScore = Math.round(
                     (avgSleep >= 7 ? 25 : (avgSleep / 7) * 25) +
                     (avgStudy >= 5 ? 25 : (avgStudy / 5) * 25) +
                     (studyDays >= 5 ? 25 : (studyDays / 5) * 25) +
-                    25 // Base score
+                    25
                 );
 
                 return {
@@ -532,7 +524,7 @@
                         <span class="recommendation-priority priority-${rec.priorityClass}">${rec.priorityLabel}</span>
                     </div>
                     <div class="recommendation-description">${rec.description}</div>
-                    ${rec.action ? `<div class="recommendation-action"><button class="btn btn-sm" onclick="${rec.action.onclick}">${rec.action.label}</button></div>` : ''}
+                    ${rec.action ? `<button class="btn btn-sm" onclick="${rec.action.onclick}">${rec.action.label}</button>` : ''}
                 </div>
             `).join('');
         }
@@ -540,7 +532,6 @@
         function generateRecommendations(analytics) {
             const recommendations = [];
             
-            // Study recommendations
             if (analytics.studyDays < 3) {
                 recommendations.push({
                     priority: 'high-priority',
@@ -570,7 +561,6 @@
                 });
             }
             
-            // Sleep recommendations
             if (parseFloat(analytics.sleepHours) < 6) {
                 recommendations.push({
                     priority: 'urgent',
@@ -600,7 +590,6 @@
                 });
             }
             
-            // Productivity recommendations
             if (parseFloat(analytics.studyHours) >= 5 && parseFloat(analytics.sleepHours) >= 7) {
                 recommendations.push({
                     priority: 'suggestion',
@@ -612,7 +601,6 @@
                 });
             }
             
-            // Wellness recommendation
             if (analytics.wellnessScore < 60) {
                 recommendations.push({
                     priority: 'high-priority',
@@ -624,7 +612,6 @@
                 });
             }
             
-            // Always include a positive recommendation if doing well
             if (analytics.wellnessScore >= 70 && recommendations.length < 3) {
                 recommendations.push({
                     priority: 'suggestion',
@@ -667,10 +654,9 @@
                 showNotification('AI tracking paused', 'info');
             }
             
-            // Save AI status to Firebase
             if (currentUser) {
                 db.collection('users').doc(currentUser.uid).collection('aiSettings').doc('config')
-                    .update({ active: aiActive });
+                    .update({ active: aiActive }).catch(err => console.error('Error updating AI status:', err));
             }
         }
 
@@ -746,14 +732,14 @@
 
         function setStudyGoal() {
             const goal = prompt('Set your daily study goal (hours):', '5');
-            if (goal) {
+            if (goal && !isNaN(goal)) {
                 showNotification(`Study goal set to ${goal} hours! 📚`, 'success');
             }
         }
 
         function setSleepGoal() {
             const goal = prompt('Set your sleep goal (hours):', '8');
-            if (goal) {
+            if (goal && !isNaN(goal)) {
                 showNotification(`Sleep goal set to ${goal} hours! 😴`, 'success');
             }
         }
@@ -767,7 +753,6 @@
             alert(tips);
         }
 
-        // Chat functionality
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
@@ -777,7 +762,6 @@
             addChatMessage(message, 'user');
             input.value = '';
             
-            // Simulate AI thinking
             setTimeout(() => {
                 const response = generateAIResponse(message);
                 addChatMessage(response, 'ai');
@@ -824,7 +808,7 @@
             }
         }
 
-        function showNotification(message, type = 'success') {
+        function showNotification(message, type) {
             const notification = document.createElement('div');
             notification.className = 'notification';
             notification.textContent = message;
@@ -845,7 +829,6 @@
         }
 
         function startRealTimeUpdates() {
-            // Update AI statistics every 5 minutes
             setInterval(async () => {
                 if (aiActive) {
                     await loadAIStatistics();
@@ -853,7 +836,6 @@
             }, 300000);
         }
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const sidebar = document.getElementById('sidebar');
@@ -865,4 +847,5 @@
     </script>
 </body>
 <link rel="stylesheet" href="y2k-style.css">
+
 </html>

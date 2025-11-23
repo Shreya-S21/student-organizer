@@ -55,10 +55,8 @@
             <p>AI-Powered Productivity Optimizer</p>
         </div>
         <div class="card-body">
-            <!-- Status Bar -->
             <div class="status-bar status-loading" id="statusBar">⏳ Connecting to Firebase...</div>
 
-            <!-- AUTH SECTION -->
             <div id="authSection">
                 <div class="tabs">
                     <button id="tabSignin" class="active" onclick="switchTab('signin')">Sign In</button>
@@ -68,7 +66,6 @@
                 <div class="msg msg-error" id="errorMsg"></div>
                 <div class="msg msg-success" id="successMsg"></div>
 
-                <!-- Sign In Form -->
                 <div class="form-box active" id="signinForm">
                     <div class="input-group">
                         <label>Email</label>
@@ -86,7 +83,6 @@
                     </button>
                 </div>
 
-                <!-- Sign Up Form -->
                 <div class="form-box" id="signupForm">
                     <div class="input-group">
                         <label>Full Name</label>
@@ -113,12 +109,11 @@
                 </div>
             </div>
 
-            <!-- WELCOME SECTION -->
             <div id="welcomeSection" style="display:none">
                 <div class="welcome-box">
                     <div class="avatar" id="userAvatar">👤</div>
                     <h2 id="welcomeName">Welcome!</h2>
-                    <p class="email" id="welcomeEmail">user@email.com</p>
+                    <p class="email" id="welcomeEmail"></p>
                     <button class="btn" onclick="goToDashboard()">Go to Dashboard</button>
                     <button class="btn btn-logout" onclick="handleLogout()">Log Out</button>
                 </div>
@@ -132,20 +127,16 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <script>
-    // =============================================
-    // FIREBASE CONFIGURATION
-    // =============================================
     const firebaseConfig = {
         apiKey: "AIzaSyBZSn_K2V_QJWM6WoMSb_dtFHIZpP_UAcI",
         authDomain: "student-organizer-53420.firebaseapp.com",
         projectId: "student-organizer-53420",
-        storageBucket: "student-organizer-53420.firebasestorage.app",
+        storageBucket: "student-organizer-53420.appspot.com", /* FIXED LINE */
         messagingSenderId: "481845921136",
         appId: "1:481845921136:web:10ce801027f42b2311bbb5",
         measurementId: "G-7365W6G880"
     };
 
-    // Initialize Firebase
     let auth, db, googleProvider;
     let firebaseReady = false;
 
@@ -155,24 +146,18 @@
         db = firebase.firestore();
         googleProvider = new firebase.auth.GoogleAuthProvider();
         
-        // Set persistence to LOCAL - stays logged in after browser close
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
             .then(() => {
                 firebaseReady = true;
                 updateStatus('connected', '✅ Firebase Connected');
             })
             .catch((error) => {
-                console.error('Persistence error:', error);
                 updateStatus('error', '⚠️ ' + error.message);
             });
     } catch (error) {
-        console.error('Firebase init error:', error);
         updateStatus('error', '❌ Firebase Error: ' + error.message);
     }
 
-    // =============================================
-    // UTILITY FUNCTIONS
-    // =============================================
     function updateStatus(type, message) {
         const bar = document.getElementById('statusBar');
         bar.className = 'status-bar status-' + type;
@@ -219,10 +204,10 @@
             'auth/email-already-in-use': 'Email already registered. Please sign in.',
             'auth/weak-password': 'Password must be at least 6 characters.',
             'auth/invalid-credential': 'Invalid email or password.',
-            'auth/too-many-requests': 'Too many attempts. Please try later.',
-            'auth/network-request-failed': 'Network error. Check your connection.',
-            'auth/popup-closed-by-user': 'Sign-in popup was closed.',
-            'auth/operation-not-allowed': 'This sign-in method is not enabled.'
+            'auth/too-many-requests': 'Too many attempts. Try later.',
+            'auth/network-request-failed': 'Network error.',
+            'auth/popup-closed-by-user': 'Popup was closed.',
+            'auth/operation-not-allowed': 'Google sign-in not enabled.'
         };
         return errors[code] || 'Error: ' + code;
     }
@@ -240,18 +225,14 @@
         document.getElementById('welcomeName').textContent = 'Welcome, ' + name + '!';
         document.getElementById('welcomeEmail').textContent = user.email;
         
-        // Show profile photo if available
         const avatar = document.getElementById('userAvatar');
         if (user.photoURL) {
-            avatar.innerHTML = '<img src="' + user.photoURL + '" alt="Profile">';
+            avatar.innerHTML = '<img src="' + user.photoURL + '">';
         } else {
             avatar.innerHTML = '👤';
         }
     }
 
-    // =============================================
-    // SIGN UP WITH EMAIL/PASSWORD
-    // =============================================
     async function handleRegister() {
         hideMessages();
 
@@ -260,93 +241,58 @@
         const password = document.getElementById('regPassword').value;
         const confirm = document.getElementById('regConfirm').value;
 
-        // Validation
-        if (!name || !email || !password || !confirm) {
-            showError('Please fill in all fields.');
-            return;
-        }
-        if (password.length < 6) {
-            showError('Password must be at least 6 characters.');
-            return;
-        }
-        if (password !== confirm) {
-            showError('Passwords do not match.');
-            return;
-        }
+        if (!name || !email || !password || !confirm) return showError('Fill all fields.');
+        if (password.length < 6) return showError('Password too short.');
+        if (password !== confirm) return showError('Passwords do not match.');
 
-        setButtonLoading('registerBtn', true, 'Creating Account...');
+        setButtonLoading('registerBtn', true, 'Creating...');
 
         try {
-            // Create user in Firebase Auth
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            
-            // Update profile with name
             await userCredential.user.updateProfile({ displayName: name });
 
-            // Save additional user data to Firestore
             await db.collection('users').doc(userCredential.user.uid).set({
-                name: name,
-                email: email,
+                name,
+                email,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            showSuccess('🎉 Account created successfully!');
-            
-            // Clear form
-            document.getElementById('regName').value = '';
-            document.getElementById('regEmail').value = '';
-            document.getElementById('regPassword').value = '';
-            document.getElementById('regConfirm').value = '';
-
+            showSuccess('Account created!');
         } catch (error) {
-            console.error('Register error:', error);
             showError(getErrorMessage(error.code));
-            setButtonLoading('registerBtn', false, 'Create Account');
         }
+
+        setButtonLoading('registerBtn', false, 'Create Account');
     }
 
-    // =============================================
-    // SIGN IN WITH EMAIL/PASSWORD
-    // =============================================
     async function handleLogin() {
         hideMessages();
 
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
 
-        if (!email || !password) {
-            showError('Please fill in all fields.');
-            return;
-        }
+        if (!email || !password) return showError('Fill all fields.');
 
-        setButtonLoading('loginBtn', true, 'Signing In...');
+        setButtonLoading('loginBtn', true, 'Signing in...');
 
         try {
             await auth.signInWithEmailAndPassword(email, password);
-            showSuccess('✅ Login successful!');
-            
-            // Clear form
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
-
+            showSuccess('Login successful!');
         } catch (error) {
-            console.error('Login error:', error);
             showError(getErrorMessage(error.code));
-            setButtonLoading('loginBtn', false, 'Sign In');
         }
+
+        setButtonLoading('loginBtn', false, 'Sign In');
     }
 
-    // =============================================
-    // GOOGLE SIGN IN
-    // =============================================
     async function handleGoogleLogin() {
         hideMessages();
-        
+        if (!firebaseReady) return showError('Firebase not ready.');
+
         try {
             const result = await auth.signInWithPopup(googleProvider);
             const user = result.user;
-            
-            // Check if new user, save to Firestore
+
             const userDoc = await db.collection('users').doc(user.uid).get();
             if (!userDoc.exists) {
                 await db.collection('users').doc(user.uid).set({
@@ -357,60 +303,35 @@
                 });
             }
 
-            showSuccess('✅ Google sign-in successful!');
-
+            showSuccess('Google sign-in successful!');
         } catch (error) {
-            console.error('Google login error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {
                 showError(getErrorMessage(error.code));
             }
         }
     }
 
-    // =============================================
-    // LOG OUT
-    // =============================================
     async function handleLogout() {
-        try {
-            await auth.signOut();
-            showAuthSection();
-            hideMessages();
-            showSuccess('You have been logged out.');
-        } catch (error) {
-            console.error('Logout error:', error);
-            showError('Error logging out.');
-        }
+        await auth.signOut();
+        showAuthSection();
+        showSuccess('Logged out.');
     }
 
-    // =============================================
-    // GO TO DASHBOARD
-    // =============================================
     function goToDashboard() {
-        window.location.href = 'dashboard.html';
+        window.location.href = "dashboard.html";
     }
 
-    // =============================================
-    // AUTH STATE LISTENER - AUTO LOGIN CHECK
-    // =============================================
     auth.onAuthStateChanged((user) => {
         if (user) {
-            // User is signed in
-            console.log('User logged in:', user.email);
             showWelcomeSection(user);
-            setButtonLoading('loginBtn', false, 'Sign In');
-            setButtonLoading('registerBtn', false, 'Create Account');
         } else {
-            // User is signed out
-            console.log('No user logged in');
             showAuthSection();
         }
     });
 
-    // Enter key support
-    document.addEventListener('keypress', function(e) {
+    document.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            const signinActive = document.getElementById('signinForm').classList.contains('active');
-            if (signinActive) {
+            if (document.getElementById('signinForm').classList.contains('active')) {
                 handleLogin();
             } else {
                 handleRegister();

@@ -1,0 +1,360 @@
+# ⏰ Task Scheduling Logic Documentation
+
+## Smart Scheduling System
+
+---
+
+## 1. Overview
+
+The Task Scheduling System automatically organizes tasks based on priority, deadlines, user productivity patterns, and available time slots while preventing conflicts.
+
+---
+
+## 2. Task Data Structure
+
+```javascript
+const taskSchema = {
+    id: "task_uuid",
+    userId: "user_id",
+    name: "Complete Math Assignment",
+    description: "Chapter 5 problems",
+    duration: 120,                    // in minutes
+    deadline: "2025-01-20T23:59:00", // MANDATORY
+    priority: "high",                 // high, medium, low
+    category: "study",                // study, health, personal, exercise
+    status: "pending",                // pending, in_progress, completed, overdue
+    scheduledTime: null,              // AI suggested time
+    actualStartTime: null,
+    actualEndTime: null,
+    isRecurring: false,
+    recurringPattern: null,           // daily, weekly, custom
+    tags: ["math", "homework"],
+    estimatedFocus: "high",           // focus level required
+    createdAt: timestamp,
+    updatedAt: timestamp
+};
+```
+
+---
+
+## 3. Priority Sorting Algorithm
+
+```javascript
+function sortTasksByPriority(tasks) {
+    const priorityWeight = {
+        'high': 3,
+        'medium': 2,
+        'low': 1
+    };
+    
+    return tasks.sort((a, b) => {
+        // First: Sort by priority (high priority first)
+        const priorityDiff = priorityWeight[b.priority] - priorityWeight[a.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        // Second: Sort by deadline (earlier deadline first)
+        const deadlineA = new Date(a.deadline);
+        const deadlineB = new Date(b.deadline);
+        const deadlineDiff = deadlineA - deadlineB;
+        if (deadlineDiff !== 0) return deadlineDiff;
+        
+        // Third: Sort by duration (shorter tasks first for quick wins)
+        return a.duration - b.duration;
+    });
+}
+```
+
+---
+
+## 4. Conflict Detection System
+
+```javascript
+function detectScheduleConflicts(newTask, existingSchedule) {
+    const conflicts = [];
+    
+    const newStart = new Date(newTask.scheduledTime);
+    const newEnd = new Date(newStart.getTime() + newTask.duration * 60000);
+    
+    existingSchedule.forEach(task => {
+        const existingStart = new Date(task.scheduledTime);
+        const existingEnd = new Date(existingStart.getTime() + task.duration * 60000);
+        
+        // Check for overlap
+        if (newStart < existingEnd && newEnd > existingStart) {
+            conflicts.push({
+                conflictingTask: task,
+                overlapMinutes: calculateOverlap(newStart, newEnd, existingStart, existingEnd),
+                type: determineConflictType(newStart, newEnd, existingStart, existingEnd)
+            });
+        }
+    });
+    
+    return {
+        hasConflict: conflicts.length > 0,
+        conflicts: conflicts,
+        suggestions: generateConflictResolution(conflicts, newTask)
+    };
+}
+
+function determineConflictType(newStart, newEnd, existingStart, existingEnd) {
+    if (newStart <= existingStart && newEnd >= existingEnd) return 'complete_overlap';
+    if (newStart >= existingStart && newEnd <= existingEnd) return 'inside_existing';
+    if (newStart < existingStart) return 'overlaps_start';
+    return 'overlaps_end';
+}
+```
+
+---
+
+## 5. Smart Time Slot Finder
+
+```javascript
+function findAvailableTimeSlots(userId, date, requiredDuration) {
+    const userRoutine = getUserRoutine(userId);
+    const existingTasks = getScheduledTasks(userId, date);
+    const userPatterns = getUserProductivityPatterns(userId);
+    
+    // Define available hours (wake time to sleep time)
+    const dayStart = userRoutine.wakeTime || '07:00';
+    const dayEnd = userRoutine.sleepTime || '23:00';
+    
+    // Generate all possible slots
+    const allSlots = generateTimeSlots(dayStart, dayEnd, 30); // 30-min increments
+    
+    // Remove occupied slots
+    const availableSlots = allSlots.filter(slot => {
+        const slotStart = new Date(`${date}T${slot.time}`);
+        const slotEnd = new Date(slotStart.getTime() + requiredDuration * 60000);
+        
+        // Check against existing tasks
+        const isOccupied = existingTasks.some(task => {
+            const taskStart = new Date(task.scheduledTime);
+            const taskEnd = new Date(taskStart.getTime() + task.duration * 60000);
+            return slotStart < taskEnd && slotEnd > taskStart;
+        });
+        
+        return !isOccupied;
+    });
+    
+    // Rank slots by productivity score
+    const rankedSlots = availableSlots.map(slot => ({
+        ...slot,
+        productivityScore: userPatterns.hourlyProductivity[parseInt(slot.time.split(':')[0])] || 50,
+        isPreferred: userPatterns.peakHours.includes(parseInt(slot.time.split(':')[0]))
+    }));
+    
+    return rankedSlots.sort((a, b) => b.productivityScore - a.productivityScore);
+}
+```
+
+---
+
+## 6. Auto-Scheduling Algorithm
+
+```javascript
+async function autoScheduleTasks(userId, tasks) {
+    const scheduledTasks = [];
+    const unscheduledTasks = [];
+    
+    // Sort tasks by priority and deadline
+    const sortedTasks = sortTasksByPriority(tasks.filter(t => !t.scheduledTime));
+    
+    for (const task of sortedTasks) {
+        // Get deadline date
+        const deadlineDate = new Date(task.deadline);
+        const today = new Date();
+        
+        // Find available slots before deadline
+        let scheduled = false;
+        let currentDate = new Date(today);
+        
+        while (currentDate <= deadlineDate && !scheduled) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const availableSlots = findAvailableTimeSlots(userId, dateStr, task.duration);
+            
+            // Match task category with optimal time
+            const optimalSlot = findOptimalSlotForCategory(availableSlots, task.category);
+            
+            if (optimalSlot) {
+                task.scheduledTime = `${dateStr}T${optimalSlot.time}`;
+                task.scheduledBy = 'ai';
+                task.schedulingReason = generateSchedulingReason(task, optimalSlot);
+                scheduledTasks.push(task);
+                scheduled = true;
+            }
+            
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        if (!scheduled) {
+            unscheduledTasks.push({
+                task,
+                reason: "No available time slots before deadline"
+            });
+        }
+    }
+    
+    return {
+        scheduled: scheduledTasks,
+        unscheduled: unscheduledTasks,
+        conflicts: detectAllConflicts(scheduledTasks)
+    };
+}
+
+function findOptimalSlotForCategory(slots, category) {
+    const categoryPreferences = {
+        'study': { preferredHours: [9, 10, 11, 19, 20, 21], minProductivity: 60 },
+        'exercise': { preferredHours: [6, 7, 17, 18], minProductivity: 40 },
+        'health': { preferredHours: [7, 12, 19], minProductivity: 30 },
+        'personal': { preferredHours: [12, 13, 21, 22], minProductivity: 30 }
+    };
+    
+    const prefs = categoryPreferences[category] || categoryPreferences['study'];
+    
+    // First try to find slot in preferred hours
+    const preferredSlot = slots.find(slot => {
+        const hour = parseInt(slot.time.split(':')[0]);
+        return prefs.preferredHours.includes(hour) && slot.productivityScore >= prefs.minProductivity;
+    });
+    
+    if (preferredSlot) return preferredSlot;
+    
+    // Fallback to highest productivity slot
+    return slots.find(slot => slot.productivityScore >= prefs.minProductivity);
+}
+```
+
+---
+
+## 7. Auto-Reschedule Delayed Tasks
+
+```javascript
+async function rescheduleDelayedTasks(userId) {
+    const now = new Date();
+    const pendingTasks = await getPendingTasks(userId);
+    
+    const delayedTasks = pendingTasks.filter(task => {
+        if (!task.scheduledTime) return false;
+        const scheduledEnd = new Date(task.scheduledTime);
+        scheduledEnd.setMinutes(scheduledEnd.getMinutes() + task.duration);
+        return scheduledEnd < now && task.status === 'pending';
+    });
+    
+    const rescheduledTasks = [];
+    
+    for (const task of delayedTasks) {
+        // Mark original slot as missed
+        await updateTaskStatus(task.id, 'delayed');
+        
+        // Find next available slot
+        const deadline = new Date(task.deadline);
+        if (deadline > now) {
+            const newSlots = findAvailableTimeSlots(userId, now.toISOString().split('T')[0], task.duration);
+            
+            if (newSlots.length > 0) {
+                const newSlot = newSlots[0];
+                task.scheduledTime = `${now.toISOString().split('T')[0]}T${newSlot.time}`;
+                task.rescheduledCount = (task.rescheduledCount || 0) + 1;
+                task.lastRescheduledAt = now;
+                
+                await updateTask(task);
+                rescheduledTasks.push(task);
+                
+                // Send notification
+                sendNotification(userId, {
+                    type: 'task_rescheduled',
+                    message: `"${task.name}" has been rescheduled to ${newSlot.time}`,
+                    taskId: task.id
+                });
+            }
+        }
+    }
+    
+    return rescheduledTasks;
+}
+```
+
+---
+
+## 8. Rest Period Enforcement
+
+```javascript
+function enforceRestPeriods(schedule) {
+    const MIN_REST_BETWEEN_LONG_TASKS = 15; // minutes
+    const LONG_TASK_THRESHOLD = 90; // minutes
+    
+    const adjustedSchedule = [];
+    let lastTaskEnd = null;
+    
+    for (const task of schedule) {
+        const taskStart = new Date(task.scheduledTime);
+        
+        if (lastTaskEnd) {
+            const gapMinutes = (taskStart - lastTaskEnd) / 60000;
+            const previousWasLong = adjustedSchedule.length > 0 && 
+                                   adjustedSchedule[adjustedSchedule.length - 1].duration >= LONG_TASK_THRESHOLD;
+            const currentIsLong = task.duration >= LONG_TASK_THRESHOLD;
+            
+            // If gap is too small and involves long tasks
+            if (gapMinutes < MIN_REST_BETWEEN_LONG_TASKS && (previousWasLong || currentIsLong)) {
+                // Add rest period
+                const restEnd = new Date(lastTaskEnd.getTime() + MIN_REST_BETWEEN_LONG_TASKS * 60000);
+                
+                adjustedSchedule.push({
+                    id: `rest_${Date.now()}`,
+                    name: '☕ Rest Break',
+                    type: 'rest',
+                    scheduledTime: lastTaskEnd.toISOString(),
+                    duration: MIN_REST_BETWEEN_LONG_TASKS,
+                    isAutoGenerated: true
+                });
+                
+                // Shift current task
+                task.scheduledTime = restEnd.toISOString();
+            }
+        }
+        
+        adjustedSchedule.push(task);
+        lastTaskEnd = new Date(task.scheduledTime);
+        lastTaskEnd.setMinutes(lastTaskEnd.getMinutes() + task.duration);
+    }
+    
+    return adjustedSchedule;
+}
+```
+
+---
+
+## 9. Scheduling Rules Summary
+
+| Rule | Description | Action |
+|------|-------------|--------|
+| **No Deadline** | Task must have deadline | Reject task, show error |
+| **High Priority First** | Sort by priority level | Auto-sort on creation |
+| **No Overlap** | Tasks cannot overlap | Detect & resolve conflicts |
+| **Rest Periods** | 15-min break after 90-min tasks | Auto-insert breaks |
+| **Peak Hours** | Schedule important tasks in peak hours | AI suggestion |
+| **Auto-Reschedule** | Delayed tasks get new slots | Background process |
+| **Category Matching** | Match task type with optimal time | Smart scheduling |
+
+---
+
+## 10. API Endpoints
+
+```javascript
+// Task Scheduling APIs
+
+POST   /api/tasks                    // Create task
+GET    /api/tasks/:userId            // Get all tasks
+PUT    /api/tasks/:taskId            // Update task
+DELETE /api/tasks/:taskId            // Delete task
+
+POST   /api/tasks/auto-schedule      // AI auto-schedule
+POST   /api/tasks/reschedule/:taskId // Reschedule single task
+GET    /api/tasks/conflicts/:userId  // Get conflicts
+GET    /api/tasks/available-slots    // Get free time slots
+
+POST   /api/schedule/optimize        // Optimize full schedule
+GET    /api/schedule/today/:userId   // Get today's schedule
+GET    /api/schedule/week/:userId    // Get weekly schedule
+```

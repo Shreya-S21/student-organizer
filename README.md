@@ -1,8 +1,13 @@
 # 🎯 AI-Based Student Productivity & Routine Optimizer
 
 An intelligent system that helps students optimize their daily routines, track productivity patterns, and achieve academic success through AI-powered recommendations.
-view demo video here
-freecompress-student_organizer.mp4
+
+
+                                                                                                                     
+                                                                                                                    view demo video here
+
+
+https://github.com/Shreya-S21/student-organizer/blob/main/freecompress-student_organizer.mp4
 
 
 ## 📋 Table of Contents

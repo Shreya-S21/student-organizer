@@ -216,7 +216,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Sanjana -[GitHub](https://github.com/Sanjanabhovi04)
 - Shreya S -[GitHub](https://github.com/Shreya-S210)
 - Spandana BS -[GitHub](https://github.com/spandanabs-24)
-- Full Stack Developer - [GitHub](https://github.com/yourusername)
+
 
 ## 🙏 Acknowledgments
 
